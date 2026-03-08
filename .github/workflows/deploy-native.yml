@@ -1,0 +1,36 @@
+name: EAS Build
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/native/**"
+      - "packages/**"
+
+jobs:
+  build:
+    name: EAS Build (iOS + Android)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: EAS Build
+        run: eas build --platform all --non-interactive --profile production
+        working-directory: apps/native

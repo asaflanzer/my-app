@@ -1,0 +1,13 @@
+{
+  "name": "@my-app/eslint-config",
+  "version": "0.0.1",
+  "private": true,
+  "files": ["*.js"],
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.18.0",
+    "@typescript-eslint/parser": "^8.18.0",
+    "eslint": "^9.17.0",
+    "eslint-plugin-react": "^7.37.3",
+    "eslint-plugin-react-hooks": "^5.1.0"
+  }
+}

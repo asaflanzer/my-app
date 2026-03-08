@@ -1,0 +1,25 @@
+{
+  "name": "my-app",
+  "private": true,
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\" --ignore-path .gitignore",
+    "db:push": "turbo run db:push --filter=@my-app/db",
+    "db:migrate": "turbo run db:migrate --filter=@my-app/db",
+    "db:generate": "turbo run db:generate --filter=@my-app/db",
+    "db:studio": "turbo run db:studio --filter=@my-app/db"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.3",
+    "prettier": "^3.4.2",
+    "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=10"
+  },
+  "packageManager": "pnpm@10.6.0"
+}
