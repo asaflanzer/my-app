@@ -3,6 +3,15 @@
   "version": "0.0.1",
   "private": true,
   "main": "./preset.ts",
+  "exports": {
+    ".": { "types": "./preset.ts", "default": "./preset.ts" },
+    "./preset": { "types": "./preset.ts", "default": "./preset.ts" }
+  },
+  "typesVersions": {
+    "*": {
+      "preset": ["./preset.ts"]
+    }
+  },
   "files": ["preset.ts"],
   "devDependencies": {
     "tailwindcss": "^3.4.17"

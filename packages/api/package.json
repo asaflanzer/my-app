@@ -16,6 +16,7 @@
   },
   "devDependencies": {
     "@my-app/typescript-config": "workspace:*",
+    "@types/node": "^20.17.6",
     "typescript": "^5.7.2"
   }
 }

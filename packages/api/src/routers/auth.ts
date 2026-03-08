@@ -5,8 +5,8 @@ export const authRouter = router({
     return ctx.session ?? null;
   }),
 
-  signOut: protectedProcedure.mutation(async ({ ctx }) => {
-    // Better Auth handles sign-out via HTTP endpoint; this is a tRPC wrapper
+  signOut: protectedProcedure.mutation(async () => {
+    // Better Auth handles sign-out via its HTTP endpoint; this is a tRPC convenience wrapper
     return { success: true };
   }),
 });

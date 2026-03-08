@@ -13,11 +13,12 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
-    "drizzle-orm": "^0.36.4",
+    "drizzle-orm": "^0.43.0",
     "postgres": "^3.4.5"
   },
   "devDependencies": {
     "@my-app/typescript-config": "workspace:*",
+    "@types/node": "^20.17.6",
     "drizzle-kit": "^0.28.1",
     "typescript": "^5.7.2"
   }

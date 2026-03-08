@@ -20,7 +20,10 @@ export const userRouter = router({
     .mutation(async ({ ctx, input }) => {
       const [updated] = await ctx.db
         .update(users)
-        .set({ ...input, updatedAt: new Date() })
+        .set({
+          updatedAt: new Date(),
+          ...(input.name !== undefined ? { name: input.name } : {}),
+        })
         .where(eq(users.id, ctx.session.user.id))
         .returning();
       return updated;
