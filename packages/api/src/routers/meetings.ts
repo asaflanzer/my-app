@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { router, protectedProcedure } from "../trpc.js";
-import { leagues, leagueMembers, meetings, meetingPlayers, matchTables } from "@my-app/db";
-import { eq, and, sql, desc, inArray } from "@my-app/db";
+import { leagues, leagueMembers, leagueTables, meetings, meetingPlayers, matchTables } from "@my-app/db";
+import { eq, and, sql, desc, inArray, asc } from "@my-app/db";
 import { TRPCError } from "@trpc/server";
 
 function nanoid() {
@@ -65,9 +65,8 @@ export const meetingRouter = router({
         .select({
           id: meetings.id,
           meetingNumber: meetings.meetingNumber,
-          gameType: meetings.gameType,
           status: meetings.status,
-          scheduledAt: meetings.scheduledAt,
+          createdAt: meetings.createdAt,
         })
         .from(meetings)
         .where(eq(meetings.leagueId, input.leagueId))
@@ -77,12 +76,7 @@ export const meetingRouter = router({
     }),
 
   activate: protectedProcedure
-    .input(
-      z.object({
-        leagueId: z.string(),
-        gameType: z.enum(["8ball", "9ball"]).default("8ball"),
-      }),
-    )
+    .input(z.object({ leagueId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       await assertLeagueHost(ctx, input.leagueId);
 
@@ -100,17 +94,25 @@ export const meetingRouter = router({
         id: meetingId,
         leagueId: input.leagueId,
         meetingNumber,
-        gameType: input.gameType,
         status: "active",
-        scheduledAt: now,
         createdAt: now,
       });
 
-      // Initialize 20 idle match tables
-      const tableRows = Array.from({ length: 20 }, (_, i) => ({
+      // Initialize match tables from configured league tables
+      const configuredTables = await ctx.db
+        .select()
+        .from(leagueTables)
+        .where(eq(leagueTables.leagueId, input.leagueId))
+        .orderBy(asc(leagueTables.tableNumber));
+
+      if (configuredTables.length === 0) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "No tables configured for this league" });
+      }
+
+      const tableRows = configuredTables.map((lt) => ({
         id: nanoid(),
         meetingId,
-        tableNumber: i + 1,
+        tableNumber: lt.tableNumber,
         score1: 0,
         score2: 0,
         status: "idle" as const,

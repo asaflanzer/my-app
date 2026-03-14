@@ -6,13 +6,15 @@ import {
   ChevronDown,
   ChevronUp,
   Loader,
+  Minus,
   Pause,
+  Pencil,
   Play,
   Plus,
   RotateCcw,
   Trash2,
 } from "lucide-react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useLeagueContext } from "@/contexts/LeagueContext";
@@ -86,7 +88,7 @@ const DatePicker = ({
   );
 };
 
-export const AdminPage = () => {
+export const LeagueAdminPage = () => {
   const { leagueId } = useParams<{ leagueId: string }>();
   const navigate = useNavigate();
   const { league, isLoading, refetch } = useLeagueContext();
@@ -94,6 +96,10 @@ export const AdminPage = () => {
   const [meetingsOpen, setMeetingsOpen] = useState(true);
   const [playoffsOpen, setPlayoffsOpen] = useState(true);
   const [playersOpen, setPlayersOpen] = useState(true);
+  const [tablesOpen, setTablesOpen] = useState(true);
+  const [newTableNumber, setNewTableNumber] = useState("");
+  const [editingTableId, setEditingTableId] = useState<string | null>(null);
+  const [editingTableNumber, setEditingTableNumber] = useState("");
   const [confirmComplete, setConfirmComplete] = useState<{
     id: string;
     meetingNumber: number;
@@ -124,6 +130,32 @@ export const AdminPage = () => {
 
   const toggleDisabled = trpc.league.toggleDisabled.useMutation({
     onSuccess: () => refetch(),
+    onError: (e) => toast.error(e.message),
+  });
+
+  const leagueTablesList = trpc.league.listTables.useQuery(
+    { leagueId: leagueId! },
+    { enabled: !!leagueId },
+  );
+
+  const addTable = trpc.league.addTable.useMutation({
+    onSuccess: () => {
+      void utils.league.listTables.invalidate();
+      setNewTableNumber("");
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const updateTable = trpc.league.updateTable.useMutation({
+    onSuccess: () => {
+      void utils.league.listTables.invalidate();
+      setEditingTableId(null);
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const removeTable = trpc.league.removeTable.useMutation({
+    onSuccess: () => void utils.league.listTables.invalidate(),
     onError: (e) => toast.error(e.message),
   });
 
@@ -210,14 +242,39 @@ export const AdminPage = () => {
     addMember.mutate({ leagueId, email: trimmed });
   };
 
+  const startEditTable = (table: { id: string; tableNumber: number }) => {
+    setEditingTableId(table.id);
+    setEditingTableNumber(String(table.tableNumber));
+  };
+
+  const handleSaveTable = () => {
+    const num = parseInt(editingTableNumber, 10);
+    if (!editingTableId || isNaN(num) || num < 1 || !leagueId) return;
+    updateTable.mutate({ leagueId, tableId: editingTableId, tableNumber: num });
+  };
+
+  const handleAddTable = () => {
+    const num = parseInt(newTableNumber, 10);
+    if (isNaN(num) || num < 1 || !leagueId) return;
+    addTable.mutate({ leagueId, tableNumber: num });
+  };
+
   return (
     <>
-      <main className="mx-auto max-w-2xl px-4 py-6 space-y-8">
+      <header className="bg-card border-b border-card-border px-[15px] py-[9px] sticky top-0 z-50">
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>
               <BreadcrumbLink asChild>
-                <Link to={`/league/${leagueId}`}>{league.name}</Link>
+                <button onClick={() => navigate("/leagues")}>Leagues</button>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <button onClick={() => navigate(`/league/${leagueId}`)}>
+                  {league.name}
+                </button>
               </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
@@ -225,9 +282,9 @@ export const AdminPage = () => {
               <BreadcrumbPage>Admin</BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>
-          <Separator variant="secondary" className="mt-4 bg-neutral-800" />
         </Breadcrumb>
-
+      </header>
+      <main className="mx-auto max-w-2xl px-4 py-6 space-y-8">
         <h1 className="text-2xl font-bold text-foreground uppercase tracking-widest font-mono">
           Admin
         </h1>
@@ -367,7 +424,7 @@ export const AdminPage = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-xs">Meeting</TableHead>
-                  <TableHead className="text-xs px-2">Date</TableHead>
+                  <TableHead className="text-xs">Date</TableHead>
                   <TableHead className="w-28 text-center text-xs px-2">
                     Status
                   </TableHead>
@@ -408,8 +465,8 @@ export const AdminPage = () => {
                         </span>
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground px-2 py-2 whitespace-nowrap">
-                        {meeting
-                          ? format(new Date(meeting.scheduledAt), "MMM d, yyyy")
+                        {meeting?.createdAt
+                          ? format(new Date(meeting.createdAt), "dd.MM.yyyy")
                           : "—"}
                       </TableCell>
                       <TableCell className="text-center px-2 py-2">
@@ -673,6 +730,131 @@ export const AdminPage = () => {
                 </TableBody>
               </Table>
             </>
+          )}
+        </section>
+        <Separator />
+
+        {/* Section E: Tables */}
+        <section className="space-y-3">
+          <button
+            type="button"
+            className="flex w-full items-center justify-between"
+            onClick={() => setTablesOpen((o) => !o)}
+          >
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-widest font-mono">
+              Tables
+            </h2>
+            <div className="flex items-center gap-2">
+              <span className="text-2xl font-bold text-muted-foreground">
+                {leagueTablesList.data?.length ?? 0}
+              </span>
+              {tablesOpen ? (
+                <ChevronUp className="h-4 w-4 text-muted-foreground" />
+              ) : (
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              )}
+            </div>
+          </button>
+          {tablesOpen && (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-xs">Id</TableHead>
+                  <TableHead className="text-xs">Table Number</TableHead>
+                  <TableHead className="w-16 px-1" />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(leagueTablesList.data ?? []).map((t, idx) => (
+                  <TableRow key={t.id}>
+                    <TableCell className="text-muted-foreground text-xs px-2 py-2 font-mono truncate max-w-[80px]">
+                      {idx + 1}
+                    </TableCell>
+                    <TableCell className="py-2">
+                      {editingTableId === t.id ? (
+                        <Input
+                          type="number"
+                          min={1}
+                          value={editingTableNumber}
+                          onChange={(e) =>
+                            setEditingTableNumber(e.target.value)
+                          }
+                          onKeyDown={(e) =>
+                            e.key === "Enter" && handleSaveTable()
+                          }
+                          className="h-8 text-sm w-20"
+                        />
+                      ) : (
+                        <span className="text-sm font-medium">
+                          {t.tableNumber}
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell className="px-1 py-2">
+                      <div className="flex items-center gap-0.5">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                          onClick={() =>
+                            editingTableId === t.id
+                              ? handleSaveTable()
+                              : startEditTable(t)
+                          }
+                          aria-label={editingTableId === t.id ? "Save" : "Edit"}
+                        >
+                          {editingTableId === t.id ? (
+                            <Check className="h-3 w-3" />
+                          ) : (
+                            <Pencil className="h-3 w-3 text-neutral-500" />
+                          )}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                          onClick={() =>
+                            leagueId &&
+                            removeTable.mutate({ leagueId, tableId: t.id })
+                          }
+                          aria-label={`Remove table ${t.tableNumber}`}
+                        >
+                          <Trash2 className="h-3 w-3 text-neutral-500" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {/* Add new table row */}
+                <TableRow>
+                  <TableCell className="text-muted-foreground text-xs px-2 py-2">
+                    {(leagueTablesList.data?.length ?? 0) + 1}
+                  </TableCell>
+                  <TableCell colSpan={2} className="py-2">
+                    <div className="flex justify-between items-center gap-2">
+                      <Input
+                        placeholder="Table Number"
+                        type="number"
+                        min={1}
+                        value={newTableNumber}
+                        onChange={(e) => setNewTableNumber(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && handleAddTable()}
+                        className="h-8 text-sm pr-9 w-36"
+                      />
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={handleAddTable}
+                        disabled={!newTableNumber.trim() || addTable.isPending}
+                        aria-label="Add table"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
           )}
         </section>
       </main>

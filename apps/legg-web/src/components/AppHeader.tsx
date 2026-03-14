@@ -1,24 +1,46 @@
-import { Menu, User, Sun, Moon, LogOut, Settings, Trophy } from "lucide-react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Menu, User, Sun, Moon, LogOut, Trophy } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useSession, signOut } from "@/lib/auth-client";
-import { isAdmin } from "@/lib/admin";
 import { useTheme } from "@/lib/use-theme";
+import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
+
+const useHideOnScroll = () => {
+  const [hidden, setHidden] = useState(false);
+  const lastY = useRef(0);
+
+  useEffect(() => {
+    const onScroll = () => {
+      const y = window.scrollY;
+      setHidden(y > lastY.current && y > 60);
+      lastY.current = y;
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  return hidden;
+};
 
 export const AppHeader = () => {
   const navigate = useNavigate();
-  const { leagueId } = useParams<{ leagueId: string }>();
+  const headerHidden = useHideOnScroll();
   const { theme, toggleTheme } = useTheme();
   const { data: session } = useSession();
-  const userIsAdmin = isAdmin(session?.user.email);
+  const { data: leagues } = trpc.league.list.useQuery(undefined, {
+    enabled: !!session,
+  });
 
   const handleSignOut = async () => {
     await signOut({
@@ -27,9 +49,11 @@ export const AppHeader = () => {
   };
 
   return (
-    <header className="flex items-center px-3 py-2 border-b border-border bg-background">
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
+    <header
+      className={`sticky top-0 z-50 flex items-center px-3 py-2 border-b border-border bg-background transition-transform duration-300 ${headerHidden ? "-translate-y-full" : "translate-y-0"}`}
+    >
+      <Drawer direction="left">
+        <DrawerTrigger asChild>
           <Button
             variant="ghost"
             size="icon"
@@ -38,53 +62,69 @@ export const AppHeader = () => {
           >
             <Menu className="h-5 w-5" />
           </Button>
-        </DropdownMenuTrigger>
+        </DrawerTrigger>
         <h1 className="ml-1 text-2xl font-bold text-primary uppercase tracking-widest font-mono">
           Legg
         </h1>
-        <DropdownMenuContent
-          align="start"
-          className="w-auto bg-[#101810] border-[#1a2518] text-[#dde8dd]"
-        >
-          <DropdownMenuItem
-            onClick={() => navigate(`/league/${leagueId ?? "lincoln-tlv"}`)}
-            className="focus:bg-emerald-900/40 focus:text-emerald-200"
-          >
-            <Trophy className="mr-2 h-4 w-4" />
-            Lincoln Tel Aviv
-          </DropdownMenuItem>
-          {userIsAdmin && (
-            <>
-              <DropdownMenuSeparator className="bg-[#1a2518]" />
-              <DropdownMenuItem
-                onClick={() =>
-                  navigate(`/league/${leagueId ?? "lincoln-tlv"}/admin`)
-                }
-                className="focus:bg-emerald-900/40 focus:text-emerald-200"
+        <DrawerContent className="w-1/2 h-full top-0 left-0 mt-0 rounded-none bg-card border-r border-card-border text-card-foreground">
+          <DrawerHeader className="text-left">
+            <DrawerTitle className="text-primary text-2xl font-bold font-mono uppercase tracking-widest">
+              Legg
+            </DrawerTitle>
+            {session?.user.name && (
+              <p className="text-sm text-primary font-mono">
+                Welcome,{" "}
+                <span className="font-semibold text-primary">
+                  {session.user.name.split(" ")[0]}
+                </span>
+                {` 👋`}
+              </p>
+            )}
+          </DrawerHeader>
+          <nav className="flex flex-col gap-1 py-4 h-full">
+            {/* Leagues group */}
+            <DrawerClose asChild>
+              <Button
+                variant="ghost"
+                className="justify-start gap-2 hover:bg-muted/50"
+                onClick={() => navigate("/leagues")}
               >
-                <Settings className="mr-2 h-4 w-4" />
-                Admin
-              </DropdownMenuItem>
-            </>
-          )}
-          <DropdownMenuSeparator className="bg-[#1a2518]" />
-          <DropdownMenuItem
-            onClick={() => navigate("/profile")}
-            className="focus:bg-emerald-900/40 focus:text-emerald-200"
-          >
-            <User className="mr-2 h-4 w-4" />
-            Profile
-          </DropdownMenuItem>
-          <DropdownMenuSeparator className="bg-[#1a2518]" />
-          <DropdownMenuItem
-            onClick={handleSignOut}
-            className="focus:bg-emerald-900/40 focus:text-emerald-200"
-          >
-            <LogOut className="mr-2 h-4 w-4" />
-            Sign out
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+                <Trophy className="h-4 w-4" />
+                Leagues
+              </Button>
+            </DrawerClose>
+            {leagues && leagues.length > 0 && (
+              <div className="flex flex-col gap-0.5 pl-6">
+                {leagues.map((league) => (
+                  <DrawerClose key={league.id} asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="justify-start gap-2 text-primary hover:bg-muted/50 hover:text-foreground h-8 text-xs"
+                      onClick={() => navigate(`/league/${league.id}`)}
+                    >
+                      {league.name}
+                    </Button>
+                  </DrawerClose>
+                ))}
+              </div>
+            )}
+
+            <div className="mt-auto">
+              <DrawerClose asChild>
+                <Button
+                  variant="ghost"
+                  className="justify-start gap-2 hover:bg-muted/50"
+                  onClick={handleSignOut}
+                >
+                  <LogOut className="h-4 w-4" />
+                  Sign out
+                </Button>
+              </DrawerClose>
+            </div>
+          </nav>
+        </DrawerContent>
+      </Drawer>
       <div className="ml-auto flex items-center gap-2">
         <Sun className="h-4 w-4 text-yellow-500" />
         <Switch

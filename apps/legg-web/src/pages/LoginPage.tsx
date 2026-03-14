@@ -24,7 +24,7 @@ export const LoginPage = () => {
   }
 
   if (session) {
-    return <Navigate to="/league/lincoln-tlv" replace />;
+    return <Navigate to="/leagues" replace />;
   }
 
   return (

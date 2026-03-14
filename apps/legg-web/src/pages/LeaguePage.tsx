@@ -1,9 +1,18 @@
 import { useState, useMemo } from "react";
-import { Navigate, useParams } from "react-router-dom";
+import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
-import { ChevronDown, Loader, Logs, Play } from "lucide-react";
+import { ChevronDown, Loader, Logs, Tablet } from "lucide-react";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { cn } from "@/lib/utils";
 import { useSession } from "@/lib/auth-client";
+import { isAdmin } from "@/lib/admin";
 import { useLeagueContext } from "@/contexts/LeagueContext";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -43,8 +52,10 @@ const ScorePill = ({ v, active, winner, onPick }: IScorePillProps) => (
 type PlayerStatus = "available" | "ready" | "playing";
 
 export const LeaguePage = () => {
+  const navigate = useNavigate();
   const { leagueId } = useParams<{ leagueId: string }>();
   const { data: session, isPending: sessionPending } = useSession();
+  const userIsAdmin = isAdmin(session?.user.email);
   const { league, isLoading: leagueLoading, myMemberId } = useLeagueContext();
 
   const { data: activeMeeting, refetch: refetchMeeting } =
@@ -254,27 +265,29 @@ export const LeaguePage = () => {
   return (
     <div className="w-full sm:max-w-sm sm:mx-auto text-foreground pb-16">
       {/* HEADER */}
-      <header className="bg-card border-b border-card-border px-[15px] py-[9px] flex items-center justify-between sticky top-0 z-50">
-        <div className="flex w-full justify-between items-center gap-1.5">
-          {session.user.name && (
-            <h2 className="text-foreground m-0 font-mono font-extrabold tracking-widest">
-              Welcome{" "}
-              <span className="font-semibold text-foreground">
-                {session.user.name.split(" ")[0]}
-              </span>
-            </h2>
-          )}
-          <div>
-            <div className="text-[10px] font-mono text-primary font-semibold tracking-[1.5px] uppercase leading-none">
-              {league?.startTime
-                ? `${is9ball ? "9" : "8"}-Ball League`
-                : "8-Ball League"}
-            </div>
-            <h2 className="font-mono font-extrabold text-foreground leading-tight">
-              {league?.name ?? "League"}
-            </h2>
-          </div>
-        </div>
+      <header className="bg-card border-b border-card-border px-[15px] py-[9px] sticky top-0 z-50 flex items-center justify-between">
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <button onClick={() => navigate("/leagues")}>Leagues</button>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>{league?.name ?? "League"}</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+        {userIsAdmin && (
+          <Button
+            size="xs"
+            className="bg-amber-500 text-white"
+            onClick={() => navigate(`/league/${leagueId}/admin`)}
+          >
+            Admin
+          </Button>
+        )}
       </header>
 
       <div className="px-[13px] pt-[14px]">
@@ -361,17 +374,11 @@ export const LeaguePage = () => {
                         Your Game · Table {t.tableNumber}
                       </span>
                       <div className="flex items-center gap-[6px]">
-                        <span className="text-sm">
-                          <img
-                            src={is9ball ? nineBallUrl : eightBallUrl}
-                            alt="ball"
-                            className="w-4 h-4"
-                          />
-                        </span>
-                        <span className="text-[9px] font-bold uppercase tracking-[1px] whitespace-nowrap text-primary">
+                        <span className="text-[9px] font-bold uppercase tracking-[1px] whitespace-nowrap text-foreground">
                           {is9ball ? "9-BALL" : "8-BALL"}
                         </span>
                         <Switch
+                          size="xs"
                           checked={is9ball}
                           onCheckedChange={setIs9ball}
                         />
@@ -385,14 +392,7 @@ export const LeaguePage = () => {
                       {(() => {
                         return (
                           <div className="flex-1 flex flex-col items-start gap-1.5">
-                            <span
-                              className={cn(
-                                "text-sm font-bold",
-                                p1?.id === myMemberId
-                                  ? "text-primary"
-                                  : "text-foreground",
-                              )}
-                            >
+                            <span className="text-sm font-bold text-foreground">
                               {p1?.name ?? "N/A"}
                             </span>
                             <div className="flex items-center gap-1.5">
@@ -651,7 +651,7 @@ export const LeaguePage = () => {
           >
             <CollapsibleTrigger className="flex items-center justify-between w-full bg-transparent border-none cursor-pointer p-0 mb-4">
               <h2 className="text-[11px] font-bold text-primary tracking-[1.5px] uppercase m-0 flex items-center">
-                <Play className="w-4 h-4 mr-2" /> Tables
+                <Tablet className="w-4 h-4 mr-2" /> Tables
               </h2>
               <ChevronDown
                 size={14}
@@ -780,11 +780,11 @@ export const LeaguePage = () => {
           return (
             <div
               onClick={() => setModal(null)}
-              className="fixed inset-0 bg-black/80 flex items-end z-[100]"
+              className="fixed inset-0 bg-black/40 flex items-end z-[100]"
             >
               <div
                 onClick={(e) => e.stopPropagation()}
-                className="w-full sm:max-w-sm sm:mx-auto bg-card border border-game-banner-border rounded-t-[18px] px-5 pt-[22px] pb-8"
+                className="w-full sm:max-w-sm sm:mx-auto bg-background border border-card-border rounded-t-[18px] px-5 pt-[22px] pb-8"
               >
                 <div className="text-center text-lg font-extrabold mb-0.5">
                   Submit Score
@@ -801,14 +801,7 @@ export const LeaguePage = () => {
                     key={key}
                     className="flex justify-between items-center mb-4"
                   >
-                    <span
-                      className={cn(
-                        "text-[15px] font-bold",
-                        player?.id === myMemberId
-                          ? "text-me"
-                          : "text-foreground",
-                      )}
-                    >
+                    <span className="text-[15px] font-bold text-foreground">
                       {player?.name}
                     </span>
                     <div className="flex gap-[7px]">
@@ -862,17 +855,14 @@ export const LeaguePage = () => {
           return (
             <div
               onClick={() => setOptOutModal(false)}
-              className="fixed inset-0 bg-black/80 flex items-end z-[100]"
+              className="fixed inset-0 bg-black/40 flex items-end z-[100]"
             >
               <div
                 onClick={(e) => e.stopPropagation()}
-                className="w-full sm:max-w-sm sm:mx-auto bg-card border border-game-banner-border rounded-t-[18px] px-5 pt-[22px] pb-8"
+                className="w-full sm:max-w-sm sm:mx-auto bg-background border border-card-border rounded-t-[18px] px-5 pt-[22px] pb-8"
               >
-                <div className="text-center text-lg font-extrabold mb-0.5">
+                <div className="text-center text-lg font-extrabold mb-4">
                   Opt Out
-                </div>
-                <div className="text-center text-xs text-primary mb-[22px]">
-                  Table {myActiveTable.tableNumber}
                 </div>
 
                 <Button
@@ -883,7 +873,7 @@ export const LeaguePage = () => {
                     "w-full h-auto flex-col items-start px-4 py-[14px] text-left gap-0.5 mb-2.5 rounded-[10px]",
                     hasAvailable
                       ? "bg-tinted-btn-bg border-tinted-btn-border text-tinted-btn-text"
-                      : "bg-muted border-border text-muted-foreground cursor-not-allowed",
+                      : "bg-muted border-border text-foreground cursor-not-allowed",
                   )}
                 >
                   <span className="text-sm font-bold">
@@ -891,7 +881,7 @@ export const LeaguePage = () => {
                       ? "Shuffle player"
                       : "Shuffle player (no one available)"}
                   </span>
-                  <span className="text-[11px] text-muted-foreground font-normal">
+                  <span className="text-[11px] text-foreground font-normal">
                     Replace me with an available player
                   </span>
                 </Button>
@@ -900,10 +890,10 @@ export const LeaguePage = () => {
                   onClick={handleTakeBreak}
                   disabled={takeBreak.isPending}
                   variant="outline"
-                  className="w-full h-auto flex-col items-start px-4 py-[14px] text-left gap-0.5 mb-2.5 rounded-[10px] bg-rose-950 border-rose-900 text-rose-300"
+                  className="w-full h-auto flex-col items-start px-4 py-[14px] text-left gap-0.5 mb-2.5 rounded-[10px] bg-rose-950 border-rose-900 text-foreground"
                 >
                   <span className="text-sm font-bold">Take a break</span>
-                  <span className="text-[11px] text-muted-foreground font-normal">
+                  <span className="text-[11px] text-foreground font-normal">
                     Cancel this game, free the table
                   </span>
                 </Button>
@@ -911,7 +901,7 @@ export const LeaguePage = () => {
                 <Button
                   onClick={() => setOptOutModal(false)}
                   variant="ghost"
-                  className="w-full h-auto py-[10px] text-muted-foreground text-[13px]"
+                  className="w-full h-auto py-[10px] text-[13px]"
                 >
                   Cancel
                 </Button>

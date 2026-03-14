@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { router, protectedProcedure } from "../trpc.js";
-import { leagues, leagueMembers, users } from "@my-app/db";
-import { eq, and } from "@my-app/db";
+import { leagues, leagueMembers, leagueTables, users } from "@my-app/db";
+import { eq, and, asc } from "@my-app/db";
 import { TRPCError } from "@trpc/server";
 
 function nanoid() {
@@ -77,6 +77,15 @@ export const leagueRouter = router({
         createdAt: now,
         updatedAt: now,
       });
+
+      // Seed 15 default tables (10–24)
+      await ctx.db.insert(leagueTables).values(
+        Array.from({ length: 15 }, (_, i) => ({
+          id: nanoid(),
+          leagueId,
+          tableNumber: i + 10,
+        })),
+      );
 
       return { id: leagueId, slug: input.slug };
     }),
@@ -359,5 +368,61 @@ export const leagueRouter = router({
     .mutation(async ({ ctx, input }) => {
       await assertLeagueHost(ctx, input.leagueId);
       await ctx.db.delete(leagues).where(eq(leagues.id, input.leagueId));
+    }),
+
+  listTables: protectedProcedure
+    .input(z.object({ leagueId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      await assertLeagueHost(ctx, input.leagueId);
+      const existing = await ctx.db
+        .select()
+        .from(leagueTables)
+        .where(eq(leagueTables.leagueId, input.leagueId))
+        .orderBy(asc(leagueTables.tableNumber));
+
+      if (existing.length > 0) return existing;
+
+      // Auto-seed 15 default tables (10–24) if none exist
+      const rows = Array.from({ length: 15 }, (_, i) => ({
+        id: nanoid(),
+        leagueId: input.leagueId,
+        tableNumber: i + 10,
+      }));
+      await ctx.db.insert(leagueTables).values(rows);
+      return ctx.db
+        .select()
+        .from(leagueTables)
+        .where(eq(leagueTables.leagueId, input.leagueId))
+        .orderBy(asc(leagueTables.tableNumber));
+    }),
+
+  addTable: protectedProcedure
+    .input(z.object({ leagueId: z.string(), tableNumber: z.number().int().positive() }))
+    .mutation(async ({ ctx, input }) => {
+      await assertLeagueHost(ctx, input.leagueId);
+      await ctx.db.insert(leagueTables).values({
+        id: nanoid(),
+        leagueId: input.leagueId,
+        tableNumber: input.tableNumber,
+      });
+    }),
+
+  updateTable: protectedProcedure
+    .input(z.object({ leagueId: z.string(), tableId: z.string(), tableNumber: z.number().int().positive() }))
+    .mutation(async ({ ctx, input }) => {
+      await assertLeagueHost(ctx, input.leagueId);
+      await ctx.db
+        .update(leagueTables)
+        .set({ tableNumber: input.tableNumber })
+        .where(and(eq(leagueTables.id, input.tableId), eq(leagueTables.leagueId, input.leagueId)));
+    }),
+
+  removeTable: protectedProcedure
+    .input(z.object({ leagueId: z.string(), tableId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      await assertLeagueHost(ctx, input.leagueId);
+      await ctx.db
+        .delete(leagueTables)
+        .where(and(eq(leagueTables.id, input.tableId), eq(leagueTables.leagueId, input.leagueId)));
     }),
 });

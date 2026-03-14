@@ -12,8 +12,9 @@ import { Loader } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { LoginPage } from "@/pages/LoginPage";
 import { LeaguePage } from "@/pages/LeaguePage";
-import { AdminPage } from "@/pages/AdminPage";
+import { LeagueAdminPage } from "@/pages/LeagueAdminPage";
 import { HomePage } from "@/pages/HomePage";
+import { ChooseLeaguePage } from "@/pages/ChooseLeaguePage";
 import { AppHeader } from "@/components/AppHeader";
 import { Toaster } from "@/components/ui/sonner";
 import { LeagueProvider } from "@/contexts/LeagueContext";
@@ -67,6 +68,7 @@ export default function App() {
           <PageTransitionLoader />
           <Routes>
             <Route path="/" element={<HomePage />} />
+            <Route path="/leagues" element={<ChooseLeaguePage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route
               element={
@@ -77,7 +79,10 @@ export default function App() {
             >
               <Route path="/league/:leagueId" element={<LeaguePage />} />
               <Route element={<AdminRoute />}>
-                <Route path="/league/:leagueId/admin" element={<AdminPage />} />
+                <Route
+                  path="/league/:leagueId/admin"
+                  element={<LeagueAdminPage />}
+                />
               </Route>
             </Route>
           </Routes>

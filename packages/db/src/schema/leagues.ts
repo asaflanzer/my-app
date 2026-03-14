@@ -36,7 +36,21 @@ export const leagueMembers = pgTable(
   (t) => [uniqueIndex("league_members_league_user_idx").on(t.leagueId, t.userId)],
 );
 
+export const leagueTables = pgTable(
+  "league_tables",
+  {
+    id: text("id").primaryKey(),
+    leagueId: text("league_id")
+      .notNull()
+      .references(() => leagues.id, { onDelete: "cascade" }),
+    tableNumber: integer("table_number").notNull(),
+  },
+  (t) => [uniqueIndex("league_tables_league_table_idx").on(t.leagueId, t.tableNumber)],
+);
+
 export type League = typeof leagues.$inferSelect;
 export type NewLeague = typeof leagues.$inferInsert;
 export type LeagueMember = typeof leagueMembers.$inferSelect;
 export type NewLeagueMember = typeof leagueMembers.$inferInsert;
+export type LeagueTable = typeof leagueTables.$inferSelect;
+export type NewLeagueTable = typeof leagueTables.$inferInsert;

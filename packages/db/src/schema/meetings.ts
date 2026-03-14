@@ -8,9 +8,7 @@ export const meetings = pgTable("meetings", {
     .notNull()
     .references(() => leagues.id, { onDelete: "cascade" }),
   meetingNumber: integer("meeting_number").notNull(),
-  gameType: text("game_type").notNull().default("8ball"), // '8ball' | '9ball'
   status: text("status").notNull().default("active"), // 'active' | 'idle' | 'completed'
-  scheduledAt: timestamp("scheduled_at").defaultNow().notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
