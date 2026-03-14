@@ -19,15 +19,27 @@ export const HomePage = () => {
   }
 
   const handleSignOut = async () => {
-    await signOut({ fetchOptions: { onSuccess: () => window.location.replace("/login") } });
+    await signOut({
+      fetchOptions: { onSuccess: () => window.location.replace("/login") },
+    });
   };
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-8 bg-background p-8">
-      <h1 className="text-4xl font-bold">Welcome, {session.user.name ?? session.user.email}</h1>
+      <h1 className="text-4xl font-bold">
+        Welcome, {session.user.name ?? session.user.email}
+      </h1>
       <div className="flex flex-col gap-3 w-full max-w-xs">
-        <Button size="lg" onClick={() => navigate("/tournaments")}>Join Tournament</Button>
-        <Button size="lg" variant="outline" onClick={() => navigate("/create-tournament")}>Host Tournament</Button>
+        <Button size="lg" onClick={() => navigate("/tournaments")}>
+          Join Event
+        </Button>
+        <Button
+          size="lg"
+          variant="outline"
+          onClick={() => navigate("/create-tournament")}
+        >
+          Host Event
+        </Button>
       </div>
       <Button variant="ghost" size="sm" onClick={handleSignOut}>
         Sign out
