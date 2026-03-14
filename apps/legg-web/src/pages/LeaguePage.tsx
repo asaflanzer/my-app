@@ -1,23 +1,24 @@
 import { useState } from "react";
 import { Navigate } from "react-router-dom";
+import { toast } from "sonner";
+import { ChevronDown, Loader, Logs, Play } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { useSession } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { ChevronDown, Loader, Logs, MapPin, Play } from "lucide-react";
-import { toast } from "sonner";
 import nineBallUrl from "@/assets/9ball.svg";
 import eightBallUrl from "@/assets/8ball.svg";
-import { cn } from "@/lib/utils";
 
 const ME_ID = 1;
 
 const INIT_PLAYERS = [
-  { id: 1, name: "Alex M.", wins: 5, losses: 2, pts: 12 },
+  { id: 1, name: "Alex M.", wins: 0, losses: 7, pts: 1 },
   { id: 2, name: "Jordan K.", wins: 4, losses: 3, pts: 9 },
   { id: 3, name: "Sam R.", wins: 6, losses: 1, pts: 14 },
   { id: 4, name: "Casey T.", wins: 3, losses: 4, pts: 7 },
@@ -27,6 +28,20 @@ const INIT_PLAYERS = [
   { id: 8, name: "Jamie D.", wins: 1, losses: 6, pts: 3 },
   { id: 9, name: "Drew P.", wins: 3, losses: 3, pts: 8 },
   { id: 10, name: "Quinn H.", wins: 5, losses: 2, pts: 11 },
+  { id: 11, name: "Parker N.", wins: 5, losses: 2, pts: 13 },
+  { id: 12, name: "Blake S.", wins: 2, losses: 5, pts: 4 },
+  { id: 13, name: "Avery C.", wins: 7, losses: 1, pts: 17 },
+  { id: 14, name: "Reese M.", wins: 6, losses: 2, pts: 15 },
+  { id: 15, name: "Skyler J.", wins: 5, losses: 3, pts: 12 },
+  { id: 16, name: "Finley O.", wins: 4, losses: 4, pts: 10 },
+  { id: 17, name: "Harper V.", wins: 3, losses: 5, pts: 7 },
+  { id: 18, name: "Emerson G.", wins: 3, losses: 5, pts: 6 },
+  { id: 19, name: "Rowan F.", wins: 2, losses: 6, pts: 5 },
+  { id: 20, name: "Sage A.", wins: 2, losses: 6, pts: 4 },
+  { id: 21, name: "Phoenix L.", wins: 1, losses: 7, pts: 3 },
+  { id: 22, name: "Indigo T.", wins: 1, losses: 7, pts: 2 },
+  { id: 23, name: "River K.", wins: 1, losses: 7, pts: 2 },
+  { id: 24, name: "Nova B.", wins: 0, losses: 8, pts: 1 },
 ];
 
 const initTables = () =>
@@ -86,6 +101,7 @@ export const LeaguePage = () => {
     () => sessionStorage.getItem("format") === "9ball",
   );
   const [optOutModal, setOptOutModal] = useState(false);
+  const [standingsExpanded, setStandingsExpanded] = useState(false);
 
   if (isPending) {
     return (
@@ -107,6 +123,40 @@ export const LeaguePage = () => {
   const isPast7 = simPast7 || now.getHours() >= 19;
   const canDraw = isPast7 && readyList.length >= 2;
   const sorted = [...players].sort((a, b) => b.pts - a.pts || b.wins - a.wins);
+
+  const INITIAL_LIMIT = 10;
+  const BEFORE_ME = 4;
+  const meIndex = sorted.findIndex((p) => p.id === ME_ID);
+  const needsTruncation = sorted.length > INITIAL_LIMIT;
+
+  type ScoreboardRow =
+    | { kind: "player"; player: (typeof sorted)[number]; rank: number }
+    | { kind: "hidden"; count: number };
+
+  const visibleRows: ScoreboardRow[] = (() => {
+    if (!needsTruncation || standingsExpanded) {
+      return sorted.map((p, i) => ({ kind: "player", player: p, rank: i + 1 }));
+    }
+    if (meIndex < INITIAL_LIMIT) {
+      return sorted
+        .slice(0, INITIAL_LIMIT)
+        .map((p, i) => ({ kind: "player", player: p, rank: i + 1 }));
+    }
+    const afterCount = INITIAL_LIMIT - BEFORE_ME - 2;
+    const hiddenCount = meIndex - BEFORE_ME;
+    return [
+      ...sorted
+        .slice(0, BEFORE_ME)
+        .map((p, i) => ({ kind: "player" as const, player: p, rank: i + 1 })),
+      { kind: "hidden" as const, count: hiddenCount },
+      { kind: "player" as const, player: sorted[meIndex]!, rank: meIndex + 1 },
+      ...sorted.slice(meIndex + 1, meIndex + 1 + afterCount).map((p, i) => ({
+        kind: "player" as const,
+        player: p,
+        rank: meIndex + 2 + i,
+      })),
+    ];
+  })();
   const myActiveTable = tables.find(
     (t) => (t.p1 === ME_ID || t.p2 === ME_ID) && t.phase === "active",
   );
@@ -296,13 +346,15 @@ export const LeaguePage = () => {
         <Button
           onClick={handleToggleReady}
           disabled={readyPending}
-          variant={myReady ? "outline" : "default"}
+          variant={
+            myReady || myActiveTable?.phase === "active" ? "outline" : "default"
+          }
           size="lg"
           className="w-full mb-4"
         >
           {readyPending ? (
             <Loader className="animate-spin" />
-          ) : myReady ? (
+          ) : myReady || myActiveTable?.phase === "active" ? (
             "Take a Break"
           ) : (
             "Ready to Play"
@@ -501,9 +553,7 @@ export const LeaguePage = () => {
                     Submit Score
                   </Button>
                   <div className="flex items-center gap-1">
-                    <p className="text-xs text-table-header">
-                      Don't want to play?
-                    </p>
+                    <p className="text-xs">Don't want to play?</p>
                     <Button
                       onClick={() => setOptOutModal(true)}
                       variant="link"
@@ -547,7 +597,25 @@ export const LeaguePage = () => {
                 <span className="text-center">L</span>
                 <span className="text-right">Pts</span>
               </div>
-              {sorted.map((p, i) => {
+              {visibleRows.map((row) => {
+                if (row.kind === "hidden") {
+                  return (
+                    <div
+                      key="hidden"
+                      onClick={() => setStandingsExpanded(true)}
+                      className="bg-neutral-800 px-3 py-1 border-b border-muted cursor-pointer hover:bg-muted/30 transition-colors"
+                    >
+                      <div className="px-2 flex gap-2 items-center justify-center text-[10px] italic tracking-widest">
+                        <Separator variant="secondary" type="dashed" />
+                        <span className="text-primary whitespace-nowrap">
+                          {row.count} hidden players
+                        </span>
+                        <Separator variant="secondary" type="dashed" />
+                      </div>
+                    </div>
+                  );
+                }
+                const { player: p, rank } = row;
                 const rankCol =
                   (
                     [
@@ -555,7 +623,7 @@ export const LeaguePage = () => {
                       "text-rank-silver",
                       "text-amber-600",
                     ] as string[]
-                  )[i] ?? "";
+                  )[rank - 1] ?? "";
                 const isMe = p.id === ME_ID;
                 const badge =
                   (
@@ -569,12 +637,12 @@ export const LeaguePage = () => {
                     key={p.id}
                     className={cn(
                       "grid grid-cols-[22px_1fr_28px_28px_36px] px-3 py-[9px] items-center",
-                      i < sorted.length - 1 && "border-b border-muted",
+                      "border-b border-muted last:border-b-0",
                       isMe && "bg-me-row",
                     )}
                   >
                     <span className={cn("text-[11px] font-extrabold", rankCol)}>
-                      {i + 1}
+                      {rank}
                     </span>
                     <span
                       className={cn(
@@ -600,6 +668,18 @@ export const LeaguePage = () => {
                 );
               })}
             </div>
+            {needsTruncation && (
+              <Button
+                onClick={() => setStandingsExpanded((v) => !v)}
+                variant="link"
+                size="xs"
+                className="w-full"
+              >
+                {standingsExpanded
+                  ? "View Less"
+                  : `View All (${sorted.length})`}
+              </Button>
+            )}
           </CollapsibleContent>
         </Collapsible>
 

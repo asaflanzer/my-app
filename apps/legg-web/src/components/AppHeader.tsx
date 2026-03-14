@@ -36,7 +36,7 @@ export const AppHeader = () => {
             <Menu className="h-5 w-5" />
           </Button>
         </DropdownMenuTrigger>
-        <h1 className="ml-1 text-2xl font-bold text-primary uppercase tracking-widest">
+        <h1 className="ml-1 text-2xl font-bold text-primary uppercase tracking-widest font-mono">
           Legg
         </h1>
         <DropdownMenuContent
