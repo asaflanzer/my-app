@@ -17,10 +17,15 @@ const PROVIDER_ICONS: Record<Provider, string> = {
 
 export const OAuthButton = ({ provider, label, callbackURL = `${window.location.origin}/` }: OAuthButtonProps) => {
   const handleClick = async () => {
-    const result = await signIn.social({ provider, callbackURL });
-    if (result?.error) {
-      console.error(`[${provider} sign-in error]`, result.error);
-      alert(`Sign-in failed: ${result.error.message ?? result.error.status}`);
+    try {
+      const result = await signIn.social({ provider, callbackURL });
+      if (result?.error) {
+        console.error(`[${provider} sign-in error]`, result.error);
+        alert(`Sign-in failed: ${result.error.message ?? result.error.status}`);
+      }
+    } catch (err) {
+      console.error(`[${provider} sign-in exception]`, err);
+      alert(`Sign-in failed: ${err instanceof Error ? err.message : "Unknown error"}`);
     }
   };
 

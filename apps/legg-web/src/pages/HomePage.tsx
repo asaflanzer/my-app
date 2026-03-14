@@ -34,7 +34,7 @@ export const HomePage = () => {
       </div>
 
       <h1
-        className="text-4xl font-bold tracking-widest text-white"
+        className="text-4xl font-bold tracking-widest text-white uppercase font-mono"
         style={{
           opacity: 0,
           animation: "fade-down 0.5s ease-out 1.2s forwards",
@@ -63,7 +63,7 @@ export const HomePage = () => {
       >
         <Button
           size="lg"
-          className="px-12 text-base uppercase tracking-widest text-black"
+          className="px-12 text-base uppercase tracking-widest text-black font-mono"
           onClick={() => navigate("/login")}
         >
           Login

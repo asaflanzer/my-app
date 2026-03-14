@@ -1,6 +1,7 @@
-import { Menu, User, Sun, Moon, LogOut, Settings } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { signOut } from "@/lib/auth-client";
+import { Menu, User, Sun, Moon, LogOut, Settings, Trophy } from "lucide-react";
+import { useNavigate, useParams } from "react-router-dom";
+import { useSession, signOut } from "@/lib/auth-client";
+import { isAdmin } from "@/lib/admin";
 import { useTheme } from "@/lib/use-theme";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -11,15 +12,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import eightBallUrl from "@/assets/8ball.svg";
 
 export const AppHeader = () => {
   const navigate = useNavigate();
+  const { leagueId } = useParams<{ leagueId: string }>();
   const { theme, toggleTheme } = useTheme();
+  const { data: session } = useSession();
+  const userIsAdmin = isAdmin(session?.user.email);
 
   const handleSignOut = async () => {
     await signOut({
-      fetchOptions: { onSuccess: () => window.location.replace("/login") },
+      fetchOptions: { onSuccess: () => window.location.replace("/") },
     });
   };
 
@@ -44,12 +47,24 @@ export const AppHeader = () => {
           className="w-auto bg-[#101810] border-[#1a2518] text-[#dde8dd]"
         >
           <DropdownMenuItem
-            onClick={() => navigate("/league/lincoln-tlv/admin")}
+            onClick={() => navigate(`/league/${leagueId ?? "lincoln-tlv"}`)}
             className="focus:bg-emerald-900/40 focus:text-emerald-200"
           >
-            <Settings className="mr-2 h-4 w-4" />
-            Admin
+            <Trophy className="mr-2 h-4 w-4" />
+            Lincoln Tel Aviv
           </DropdownMenuItem>
+          {userIsAdmin && (
+            <>
+              <DropdownMenuSeparator className="bg-[#1a2518]" />
+              <DropdownMenuItem
+                onClick={() => navigate(`/league/${leagueId ?? "lincoln-tlv"}/admin`)}
+                className="focus:bg-emerald-900/40 focus:text-emerald-200"
+              >
+                <Settings className="mr-2 h-4 w-4" />
+                Admin
+              </DropdownMenuItem>
+            </>
+          )}
           <DropdownMenuSeparator className="bg-[#1a2518]" />
           <DropdownMenuItem
             onClick={() => navigate("/profile")}
@@ -71,6 +86,7 @@ export const AppHeader = () => {
       <div className="ml-auto flex items-center gap-2">
         <Sun className="h-4 w-4 text-yellow-500" />
         <Switch
+          size="xs"
           checked={theme === "light"}
           onCheckedChange={toggleTheme}
           aria-label="Toggle theme"

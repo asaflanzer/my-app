@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { ChevronDown, Loader, Logs, Play } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSession } from "@/lib/auth-client";
+import { useLeagueContext } from "@/contexts/LeagueContext";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
@@ -16,33 +17,6 @@ import nineBallUrl from "@/assets/9ball.svg";
 import eightBallUrl from "@/assets/8ball.svg";
 
 const ME_ID = 1;
-
-const INIT_PLAYERS = [
-  { id: 1, name: "Alex M.", wins: 0, losses: 7, pts: 1 },
-  { id: 2, name: "Jordan K.", wins: 4, losses: 3, pts: 9 },
-  { id: 3, name: "Sam R.", wins: 6, losses: 1, pts: 14 },
-  { id: 4, name: "Casey T.", wins: 3, losses: 4, pts: 7 },
-  { id: 5, name: "Morgan L.", wins: 7, losses: 0, pts: 16 },
-  { id: 6, name: "Riley B.", wins: 2, losses: 5, pts: 5 },
-  { id: 7, name: "Taylor W.", wins: 4, losses: 3, pts: 10 },
-  { id: 8, name: "Jamie D.", wins: 1, losses: 6, pts: 3 },
-  { id: 9, name: "Drew P.", wins: 3, losses: 3, pts: 8 },
-  { id: 10, name: "Quinn H.", wins: 5, losses: 2, pts: 11 },
-  { id: 11, name: "Parker N.", wins: 5, losses: 2, pts: 13 },
-  { id: 12, name: "Blake S.", wins: 2, losses: 5, pts: 4 },
-  { id: 13, name: "Avery C.", wins: 7, losses: 1, pts: 17 },
-  { id: 14, name: "Reese M.", wins: 6, losses: 2, pts: 15 },
-  { id: 15, name: "Skyler J.", wins: 5, losses: 3, pts: 12 },
-  { id: 16, name: "Finley O.", wins: 4, losses: 4, pts: 10 },
-  { id: 17, name: "Harper V.", wins: 3, losses: 5, pts: 7 },
-  { id: 18, name: "Emerson G.", wins: 3, losses: 5, pts: 6 },
-  { id: 19, name: "Rowan F.", wins: 2, losses: 6, pts: 5 },
-  { id: 20, name: "Sage A.", wins: 2, losses: 6, pts: 4 },
-  { id: 21, name: "Phoenix L.", wins: 1, losses: 7, pts: 3 },
-  { id: 22, name: "Indigo T.", wins: 1, losses: 7, pts: 2 },
-  { id: 23, name: "River K.", wins: 1, losses: 7, pts: 2 },
-  { id: 24, name: "Nova B.", wins: 0, losses: 8, pts: 1 },
-];
 
 const initTables = () =>
   Array.from({ length: 20 }, (_, i) => ({
@@ -77,14 +51,23 @@ const ScorePill = ({ v, active, winner, onPick }: IScorePillProps) => (
   </button>
 );
 
+type PlayerStatus = "available" | "ready" | "playing";
+interface ILocalPlayer {
+  id: number;
+  name: string;
+  wins: number;
+  losses: number;
+  pts: number;
+  disabled: boolean;
+  status: PlayerStatus;
+}
+
 export const LeaguePage = () => {
   const { data: session, isPending } = useSession();
+  const { players: leaguePlayers } = useLeagueContext();
 
-  const [players, setPlayers] = useState(
-    INIT_PLAYERS.map((p) => ({
-      ...p,
-      status: "available" as "available" | "ready" | "playing",
-    })),
+  const [players, setPlayers] = useState<ILocalPlayer[]>(() =>
+    leaguePlayers.map((p) => ({ ...p, status: "available" as PlayerStatus })),
   );
   const [tables, setTables] = useState(initTables());
   const [simPast7, setSimPast7] = useState(false);
@@ -97,9 +80,7 @@ export const LeaguePage = () => {
   const [tablesOpen, setTablesOpen] = useState(
     () => sessionStorage.getItem("tables-open") !== "false",
   );
-  const [is9ball, setIs9ball] = useState(
-    () => sessionStorage.getItem("format") === "9ball",
-  );
+  const [is9ball, setIs9ball] = useState(false);
   const [optOutModal, setOptOutModal] = useState(false);
   const [standingsExpanded, setStandingsExpanded] = useState(false);
 
@@ -122,7 +103,10 @@ export const LeaguePage = () => {
   const now = new Date();
   const isPast7 = simPast7 || now.getHours() >= 19;
   const canDraw = isPast7 && readyList.length >= 2;
-  const sorted = [...players].sort((a, b) => b.pts - a.pts || b.wins - a.wins);
+  const sorted = [...players].sort((a, b) => {
+    if (a.disabled !== b.disabled) return a.disabled ? 1 : -1;
+    return b.pts - a.pts || b.wins - a.wins;
+  });
 
   const INITIAL_LIMIT = 10;
   const BEFORE_ME = 4;
@@ -350,7 +334,7 @@ export const LeaguePage = () => {
             myReady || myActiveTable?.phase === "active" ? "outline" : "default"
           }
           size="lg"
-          className="w-full mb-4"
+          className="w-full mb-4 font-mono text-xs"
         >
           {readyPending ? (
             <Loader className="animate-spin" />
@@ -401,10 +385,10 @@ export const LeaguePage = () => {
         {readyList.length === 0 && (
           <Button
             onClick={demoAllReady}
-            variant="ghost"
-            className="w-full h-auto py-[9px] bg-transparent border border-dashed border-primary text-table-header text-xs mb-[14px] rounded-[10px]"
+            variant="outline"
+            className="w-full font-mono text-xs"
           >
-            Demo: mark all players ready →
+            Demo: mark all players ready
           </Button>
         )}
 
@@ -415,7 +399,7 @@ export const LeaguePage = () => {
             const p1 = t.p1 ? gp(t.p1) : null;
             const p2 = t.p2 ? gp(t.p2) : null;
             return (
-              <div className="bg-card border border-card-border rounded-xl px-[14px] py-[11px] mb-[14px]">
+              <div className="bg-card border border-card-border rounded-xl px-[14px] py-[11px] my-4">
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-[10px] font-bold text-primary tracking-[1.5px] uppercase">
                     Your Game · Table {t.id}
@@ -431,13 +415,7 @@ export const LeaguePage = () => {
                     <span className="text-[9px] font-bold uppercase tracking-[1px] whitespace-nowrap text-primary">
                       {is9ball ? "9-BALL" : "8-BALL"}
                     </span>
-                    <Switch
-                      checked={is9ball}
-                      onCheckedChange={(v) => {
-                        setIs9ball(v);
-                        sessionStorage.setItem("format", v ? "9ball" : "8ball");
-                      }}
-                    />
+                    <Switch checked={is9ball} onCheckedChange={setIs9ball} />
                     <span className="text-[9px] font-bold text-secondary">
                       ● LIVE
                     </span>
@@ -576,7 +554,7 @@ export const LeaguePage = () => {
           }}
           className="mb-6"
         >
-          <CollapsibleTrigger className="flex items-center justify-between w-full bg-transparent border-none cursor-pointer p-0 mb-4">
+          <CollapsibleTrigger className="flex items-center justify-between w-full bg-transparent border-none cursor-pointer p-0 mt-4 mb-4">
             <h2 className="text-[11px] font-bold text-primary tracking-[1.5px] uppercase m-0 flex items-center">
               <Logs className="w-4 h-4 mr-2" /> Standings
             </h2>
@@ -650,6 +628,7 @@ export const LeaguePage = () => {
                         isMe
                           ? "font-bold text-table-header"
                           : "font-normal text-foreground",
+                        p.disabled && "line-through opacity-40",
                       )}
                     >
                       {p.name}

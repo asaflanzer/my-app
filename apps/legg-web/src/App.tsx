@@ -12,15 +12,19 @@ import { Loader } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { LoginPage } from "@/pages/LoginPage";
 import { LeaguePage } from "@/pages/LeaguePage";
+import { AdminPage } from "@/pages/AdminPage";
 import { HomePage } from "@/pages/HomePage";
 import { AppHeader } from "@/components/AppHeader";
 import { Toaster } from "@/components/ui/sonner";
+import { LeagueProvider } from "@/contexts/LeagueContext";
+import { AdminRoute } from "@/components/AdminRoute";
 
 const PageTransitionLoader = () => {
   const location = useLocation();
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    window.scrollTo(0, 0);
     setLoading(true);
     const timer = setTimeout(() => setLoading(false), 300);
     return () => clearTimeout(timer);
@@ -64,8 +68,17 @@ export default function App() {
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/login" element={<LoginPage />} />
-            <Route element={<AppLayout />}>
+            <Route
+              element={
+                <LeagueProvider>
+                  <AppLayout />
+                </LeagueProvider>
+              }
+            >
               <Route path="/league/:leagueId" element={<LeaguePage />} />
+              <Route element={<AdminRoute />}>
+                <Route path="/league/:leagueId/admin" element={<AdminPage />} />
+              </Route>
             </Route>
           </Routes>
           <Toaster />
