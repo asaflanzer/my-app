@@ -1,4 +1,4 @@
-import { Menu, User, Sun, Moon, LogOut } from "lucide-react";
+import { Menu, User, Sun, Moon, LogOut, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { signOut } from "@/lib/auth-client";
 import { useTheme } from "@/lib/use-theme";
@@ -31,18 +31,26 @@ export const AppHeader = () => {
             variant="ghost"
             size="icon"
             aria-label="Open menu"
-            className="text-emerald-400 hover:text-emerald-300 hover:bg-emerald-950"
+            className="text-primary hover:text-primary hover:bg-muted"
           >
             <Menu className="h-5 w-5" />
           </Button>
         </DropdownMenuTrigger>
-        <h1 className="text-2xl font-bold text-primary uppercase tracking-widest">
+        <h1 className="ml-1 text-2xl font-bold text-primary uppercase tracking-widest">
           Legg
         </h1>
         <DropdownMenuContent
           align="start"
           className="w-auto bg-[#101810] border-[#1a2518] text-[#dde8dd]"
         >
+          <DropdownMenuItem
+            onClick={() => navigate("/league/lincoln-tlv/admin")}
+            className="focus:bg-emerald-900/40 focus:text-emerald-200"
+          >
+            <Settings className="mr-2 h-4 w-4" />
+            Admin
+          </DropdownMenuItem>
+          <DropdownMenuSeparator className="bg-[#1a2518]" />
           <DropdownMenuItem
             onClick={() => navigate("/profile")}
             className="focus:bg-emerald-900/40 focus:text-emerald-200"

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, Navigate } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import { useSession } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -8,7 +8,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { ChevronDown, Loader, Logs, Play } from "lucide-react";
+import { ChevronDown, Loader, Logs, MapPin, Play } from "lucide-react";
 import { toast } from "sonner";
 import nineBallUrl from "@/assets/9ball.svg";
 import eightBallUrl from "@/assets/8ball.svg";
@@ -54,8 +54,8 @@ const ScorePill = ({ v, active, winner, onPick }: IScorePillProps) => (
       active
         ? winner
           ? "border-secondary bg-secondary/15 text-secondary"
-          : "border-emerald-700 bg-emerald-700/20 text-primary"
-        : "border-emerald-900 bg-transparent text-emerald-900",
+          : "border-primary text-primary"
+        : "border-border bg-transparent text-muted-foreground",
     )}
   >
     {v}
@@ -271,24 +271,25 @@ export const LeaguePage = () => {
   return (
     <div className="w-full sm:max-w-sm sm:mx-auto text-foreground pb-16">
       {/* HEADER */}
-      <header className="bg-card border-b border-card-border px-[15px] py-[13px] flex items-center justify-between sticky top-0 z-50">
-        <div>
-          <div className="flex items-center gap-1 mb-1 text-[10px] text-primary font-semibold tracking-[2px] uppercase">
-            <img src={eightBallUrl} alt="8-Ball" className="w-4 h-4" /> 8-Ball
-            League
-          </div>
-          <div className="text-xl font-extrabold text-foreground leading-[1.1]">
-            Lincoln TLV
+      <header className="bg-card border-b border-card-border px-[15px] py-[9px] flex items-center justify-between sticky top-0 z-50">
+        <div className="flex w-full justify-between items-center gap-1.5">
+          {session.user.name && (
+            <h2 className="text-foreground m-0 font-mono font-extrabold tracking-widest">
+              Welcome{" "}
+              <span className="font-semibold text-foreground">
+                {session.user.name.split(" ")[0]}
+              </span>
+            </h2>
+          )}
+          <div>
+            <div className="text-[10px] font-mono text-primary font-semibold tracking-[1.5px] uppercase leading-none">
+              8-Ball League
+            </div>
+            <h2 className="font-mono font-extrabold text-foreground leading-tight">
+              Lincoln TLV
+            </h2>
           </div>
         </div>
-        <Button
-          asChild
-          variant="outline"
-          size="xs"
-          className="flex items-center gap-2"
-        >
-          <Link to="/league/lincoln-tlv/admin">Admin</Link>
-        </Button>
       </header>
 
       <div className="px-[13px] pt-[14px]">
@@ -320,7 +321,7 @@ export const LeaguePage = () => {
                   onClick={() => setSimPast7(true)}
                   variant="ghost"
                   size="sm"
-                  className="bg-emerald-950 border border-emerald-800 text-emerald-400 text-[11px] h-auto py-1 px-[10px] rounded-[10px]"
+                  className="bg-tinted-btn-bg border border-tinted-btn-border text-tinted-btn-text text-[11px] h-auto py-1 px-[10px] rounded-[10px]"
                 >
                   Simulate 7 PM
                 </Button>
@@ -349,7 +350,7 @@ export const LeaguePage = () => {
           <Button
             onClick={demoAllReady}
             variant="ghost"
-            className="w-full h-auto py-[9px] bg-transparent border border-dashed border-emerald-900 text-muted-foreground text-xs mb-[14px] rounded-[10px]"
+            className="w-full h-auto py-[9px] bg-transparent border border-dashed border-primary text-table-header text-xs mb-[14px] rounded-[10px]"
           >
             Demo: mark all players ready →
           </Button>
@@ -362,7 +363,7 @@ export const LeaguePage = () => {
             const p1 = t.p1 ? gp(t.p1) : null;
             const p2 = t.p2 ? gp(t.p2) : null;
             return (
-              <div className="bg-game-banner border border-game-banner-border rounded-xl px-[14px] py-[11px] mb-[14px]">
+              <div className="bg-card border border-card-border rounded-xl px-[14px] py-[11px] mb-[14px]">
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-[10px] font-bold text-primary tracking-[1.5px] uppercase">
                     Your Game · Table {t.id}
@@ -375,7 +376,7 @@ export const LeaguePage = () => {
                         className="w-4 h-4"
                       />
                     </span>
-                    <span className="text-[9px] font-bold uppercase tracking-[1px] whitespace-nowrap text-game-banner-foreground">
+                    <span className="text-[9px] font-bold uppercase tracking-[1px] whitespace-nowrap text-primary">
                       {is9ball ? "9-BALL" : "8-BALL"}
                     </span>
                     <Switch
@@ -412,7 +413,7 @@ export const LeaguePage = () => {
                             onClick={() => updateTableScore(t.id, side, -1)}
                             variant="ghost"
                             size="icon"
-                            className="w-10 h-10 rounded-full bg-emerald-950 border border-emerald-800 text-emerald-400 text-xl"
+                            className="w-10 h-10 rounded-full bg-tinted-btn-bg border border-tinted-btn-border text-tinted-btn-text text-xl"
                           >
                             −
                           </Button>
@@ -420,7 +421,7 @@ export const LeaguePage = () => {
                             onClick={() => updateTableScore(t.id, side, 1)}
                             variant="ghost"
                             size="icon"
-                            className="w-10 h-10 rounded-full bg-emerald-950 border border-emerald-800 text-emerald-400 text-xl"
+                            className="w-10 h-10 rounded-full bg-tinted-btn-bg border border-tinted-btn-border text-tinted-btn-text text-xl"
                           >
                             +
                           </Button>
@@ -448,7 +449,7 @@ export const LeaguePage = () => {
                         {t.s2}
                       </span>
                     </h2>
-                    <span className="text-[9px] text-game-banner-foreground uppercase tracking-[1px]">
+                    <span className="text-[9px] text-primary uppercase tracking-[1px]">
                       Race to {raceTo}
                     </span>
                   </div>
@@ -474,7 +475,7 @@ export const LeaguePage = () => {
                             onClick={() => updateTableScore(t.id, side, -1)}
                             variant="ghost"
                             size="icon"
-                            className="w-10 h-10 rounded-full bg-emerald-950 border border-emerald-800 text-emerald-400 text-xl"
+                            className="w-10 h-10 rounded-full bg-tinted-btn-bg border border-tinted-btn-border text-tinted-btn-text text-xl"
                           >
                             −
                           </Button>
@@ -482,7 +483,7 @@ export const LeaguePage = () => {
                             onClick={() => updateTableScore(t.id, side, 1)}
                             variant="ghost"
                             size="icon"
-                            className="w-10 h-10 rounded-full bg-emerald-950 border border-emerald-800 text-emerald-400 text-xl"
+                            className="w-10 h-10 rounded-full bg-tinted-btn-bg border border-tinted-btn-border text-tinted-btn-text text-xl"
                           >
                             +
                           </Button>
@@ -500,7 +501,7 @@ export const LeaguePage = () => {
                     Submit Score
                   </Button>
                   <div className="flex items-center gap-1">
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-table-header">
                       Don't want to play?
                     </p>
                     <Button
@@ -539,7 +540,7 @@ export const LeaguePage = () => {
           </CollapsibleTrigger>
           <CollapsibleContent>
             <div className="bg-card border border-card-border rounded-xl overflow-hidden">
-              <div className="grid grid-cols-[22px_1fr_28px_28px_36px] px-3 py-[7px] border-b border-muted text-[10px] text-muted-foreground uppercase tracking-[.8px]">
+              <div className="grid grid-cols-[22px_1fr_28px_28px_36px] px-3 py-[7px] border-b border-muted text-[10px] text-table-header uppercase tracking-[.8px]">
                 <span>#</span>
                 <span>Player</span>
                 <span className="text-center">W</span>
@@ -551,10 +552,10 @@ export const LeaguePage = () => {
                   (
                     [
                       "text-yellow-400",
-                      "text-emerald-200",
+                      "text-rank-silver",
                       "text-amber-600",
                     ] as string[]
-                  )[i] ?? "text-muted-foreground";
+                  )[i] ?? "";
                 const isMe = p.id === ME_ID;
                 const badge =
                   (
@@ -569,7 +570,7 @@ export const LeaguePage = () => {
                     className={cn(
                       "grid grid-cols-[22px_1fr_28px_28px_36px] px-3 py-[9px] items-center",
                       i < sorted.length - 1 && "border-b border-muted",
-                      isMe && "bg-emerald-700/10",
+                      isMe && "bg-me-row",
                     )}
                   >
                     <span className={cn("text-[11px] font-extrabold", rankCol)}>
@@ -579,7 +580,7 @@ export const LeaguePage = () => {
                       className={cn(
                         "text-[13px]",
                         isMe
-                          ? "font-bold text-me"
+                          ? "font-bold text-table-header"
                           : "font-normal text-foreground",
                       )}
                     >
@@ -648,7 +649,7 @@ export const LeaguePage = () => {
                       <span
                         className={cn(
                           "text-[10px] font-bold tracking-[.4px]",
-                          myTable ? "text-primary" : "text-muted-foreground",
+                          myTable ? "text-primary" : "text-table-header",
                         )}
                       >
                         TABLE {t.id}
@@ -689,7 +690,7 @@ export const LeaguePage = () => {
                             !player
                               ? "text-foreground"
                               : player.id === ME_ID
-                                ? "text-me font-bold"
+                                ? "text-me font-bold text-table-header"
                                 : won
                                   ? "text-foreground font-bold"
                                   : "text-foreground",
@@ -734,7 +735,7 @@ export const LeaguePage = () => {
             >
               <div
                 onClick={(e) => e.stopPropagation()}
-                className="w-full sm:max-w-sm sm:mx-auto bg-card border border-emerald-800 rounded-t-[18px] px-5 pt-[22px] pb-8"
+                className="w-full sm:max-w-sm sm:mx-auto bg-card border border-game-banner-border rounded-t-[18px] px-5 pt-[22px] pb-8"
               >
                 <div className="text-center text-lg font-extrabold mb-0.5">
                   Submit Score
@@ -789,8 +790,8 @@ export const LeaguePage = () => {
                   className={cn(
                     "w-full h-auto py-[15px] text-base mt-1.5 rounded-[10px]",
                     valid
-                      ? "bg-gradient-to-br from-emerald-700 to-emerald-900 text-game-banner-foreground"
-                      : "bg-muted text-emerald-900 cursor-not-allowed",
+                      ? "bg-btn-primary text-btn-primary-foreground"
+                      : "bg-muted text-muted-foreground cursor-not-allowed",
                   )}
                 >
                   Confirm Result
@@ -815,7 +816,7 @@ export const LeaguePage = () => {
             >
               <div
                 onClick={(e) => e.stopPropagation()}
-                className="w-full sm:max-w-sm sm:mx-auto bg-card border border-emerald-800 rounded-t-[18px] px-5 pt-[22px] pb-8"
+                className="w-full sm:max-w-sm sm:mx-auto bg-card border border-game-banner-border rounded-t-[18px] px-5 pt-[22px] pb-8"
               >
                 <div className="text-center text-lg font-extrabold mb-0.5">
                   Opt Out
@@ -831,8 +832,8 @@ export const LeaguePage = () => {
                   className={cn(
                     "w-full h-auto flex-col items-start px-4 py-[14px] text-left gap-0.5 mb-2.5 rounded-[10px]",
                     hasAvailable
-                      ? "bg-emerald-950 border-emerald-800 text-emerald-400"
-                      : "bg-muted border-emerald-950 text-muted-foreground cursor-not-allowed",
+                      ? "bg-tinted-btn-bg border-tinted-btn-border text-tinted-btn-text"
+                      : "bg-muted border-border text-muted-foreground cursor-not-allowed",
                   )}
                 >
                   <span className="text-sm font-bold">

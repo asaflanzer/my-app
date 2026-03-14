@@ -11,8 +11,10 @@
     --card-border: 0 0% 64%;         /* neutral-400 */
     --popover: 163 75% 9%;
     --popover-foreground: 152 81% 96%;
-    --primary: 158 64% 52%;          /* emerald-400 */
-    --primary-foreground: 164 87% 7%;
+    --primary: 165.9 100% 9%;            /* dark emerald — labels/icons */
+    --primary-foreground: 152 81% 96%; /* light text on dark primary */
+    --btn-primary: 158 64% 52%;        /* emerald-400 — same in both modes */
+    --btn-primary-foreground: 164 87% 7%; /* dark text on bright button */
     --secondary: 38 92% 50%;          /* amber-500 */
     --secondary-foreground: 152 76% 91%;
     --muted: 164 60% 14%;
@@ -25,12 +27,18 @@
     --input: 220 13% 91%;
     --ring: 158 64% 52%;             /* emerald-400 */
     --radius: 0.5rem;
-    --game-banner: 163 75% 7%;              /* #0e1e0e - active game bg */
-    --game-banner-foreground: 152 81% 96%; /* always-light text on dark banner */
-    --game-banner-border: 161 56% 25%;     /* emerald-800 equivalent */
-    --score-dim: 164 20% 19%;              /* #2a3a28 - zero score */
-    --score-active: 152 22% 77%;           /* #b8d0b8 - non-zero score */
+    --game-banner: 158 40% 88%;              /* light green tint for active table */
+    --game-banner-foreground: 164 87% 7%;  /* dark text on light banner */
+    --game-banner-border: 158 50% 70%;     /* medium green border */
+    --score-dim: 164 20% 82%;              /* barely-visible dim on light bg */
+    --score-active: 164 70% 25%;           /* dark visible green on light bg */
     --me-color: 127 53% 71%;              /* #9ddb8a - me highlight */
+    --me-row-bg: 158 50% 90%;             /* light green row highlight */
+    --tinted-btn-bg: 158 30% 85%;         /* light tinted button bg */
+    --tinted-btn-border: 158 50% 65%;     /* medium green button border */
+    --tinted-btn-text: 165.9 100% 9%;     /* dark primary text on light button */
+    --rank-silver: 158 55% 35%;           /* rank-2 silver — visible on light bg */
+    --table-header: 158 55% 35%;          /* column header text — visible on light bg */
   }
 
   .dark {
@@ -41,8 +49,10 @@
     --card-border: 0 0% 25%;         /* neutral-700 */
     --popover: 163 75% 9%;
     --popover-foreground: 152 81% 96%;
-    --primary: 158 64% 52%;
+    --primary: 158 64% 52%;            /* emerald-400 — labels/icons */
     --primary-foreground: 164 87% 7%;
+    --btn-primary: 158 64% 52%;        /* emerald-400 — same in both modes */
+    --btn-primary-foreground: 164 87% 7%; /* dark text on bright button */
     --secondary: 38 92% 50%;          /* amber-500 */
     --secondary-foreground: 152 76% 91%;
     --muted: 164 60% 14%;
@@ -55,11 +65,17 @@
     --input: 164 60% 19%;
     --ring: 158 64% 52%;
     --game-banner: 163 75% 7%;              /* #0e1e0e - active game bg */
-    --game-banner-foreground: 152 81% 96%; /* always-light text on dark banner */
+    --game-banner-foreground: 152 81% 96%; /* light text on dark banner */
     --game-banner-border: 161 56% 25%;     /* emerald-800 equivalent */
-    --score-dim: 164 20% 19%;              /* #2a3a28 - zero score */
-    --score-active: 152 22% 77%;           /* #b8d0b8 - non-zero score */
+    --score-dim: 164 20% 19%;              /* barely-visible dim on dark bg */
+    --score-active: 152 22% 77%;           /* visible on dark bg */
     --me-color: 127 53% 71%;              /* #9ddb8a - me highlight */
+    --me-row-bg: 158 40% 12%;             /* dark green row highlight */
+    --tinted-btn-bg: 163 75% 10%;         /* dark green button bg */
+    --tinted-btn-border: 161 56% 25%;     /* emerald-800 equivalent */
+    --tinted-btn-text: 158 64% 52%;       /* emerald-400 text */
+    --rank-silver: 152 80% 75%;           /* rank-2 silver — visible on dark bg */
+    --table-header: 156 72% 67%;          /* column header text — muted on dark bg */
   }
 }
 
