@@ -140,7 +140,8 @@ export const meetingRouter = router({
       const tables = await ctx.db
         .select()
         .from(matchTables)
-        .where(eq(matchTables.meetingId, meeting.id));
+        .where(eq(matchTables.meetingId, meeting.id))
+        .orderBy(matchTables.tableNumber);
 
       const players = await ctx.db
         .select()
