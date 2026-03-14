@@ -5,3 +5,5 @@ export * from "./verifications";
 export * from "./tournaments";
 export * from "./participants";
 export * from "./matches";
+export * from "./leagues";
+export * from "./meetings";

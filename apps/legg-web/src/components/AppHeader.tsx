@@ -57,7 +57,9 @@ export const AppHeader = () => {
             <>
               <DropdownMenuSeparator className="bg-[#1a2518]" />
               <DropdownMenuItem
-                onClick={() => navigate(`/league/${leagueId ?? "lincoln-tlv"}/admin`)}
+                onClick={() =>
+                  navigate(`/league/${leagueId ?? "lincoln-tlv"}/admin`)
+                }
                 className="focus:bg-emerald-900/40 focus:text-emerald-200"
               >
                 <Settings className="mr-2 h-4 w-4" />

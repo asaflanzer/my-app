@@ -1,0 +1,42 @@
+import { pgTable, text, integer, boolean, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { users } from "./users";
+
+export const leagues = pgTable("leagues", {
+  id: text("id").primaryKey(),
+  hostId: text("host_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  slug: text("slug").notNull().unique(),
+  startDate: text("start_date"), // ISO date string, nullable
+  startTime: text("start_time").notNull().default("19:00"),
+  regularMeetings: integer("regular_meetings").notNull().default(7),
+  playoffMeetings: integer("playoff_meetings").notNull().default(2),
+  maxPlayers: integer("max_players").notNull().default(32),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const leagueMembers = pgTable(
+  "league_members",
+  {
+    id: text("id").primaryKey(),
+    leagueId: text("league_id")
+      .notNull()
+      .references(() => leagues.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    wins: integer("wins").notNull().default(0),
+    losses: integer("losses").notNull().default(0),
+    pts: integer("pts").notNull().default(0),
+    disabled: boolean("disabled").notNull().default(false),
+    joinedAt: timestamp("joined_at").defaultNow().notNull(),
+  },
+  (t) => [uniqueIndex("league_members_league_user_idx").on(t.leagueId, t.userId)],
+);
+
+export type League = typeof leagues.$inferSelect;
+export type NewLeague = typeof leagues.$inferInsert;
+export type LeagueMember = typeof leagueMembers.$inferSelect;
+export type NewLeagueMember = typeof leagueMembers.$inferInsert;

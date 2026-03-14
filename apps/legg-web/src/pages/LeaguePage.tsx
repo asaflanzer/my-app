@@ -1,10 +1,11 @@
-import { useState } from "react";
-import { Navigate } from "react-router-dom";
+import { useState, useMemo } from "react";
+import { Navigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { ChevronDown, Loader, Logs, Play } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSession } from "@/lib/auth-client";
 import { useLeagueContext } from "@/contexts/LeagueContext";
+import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
@@ -15,18 +16,6 @@ import {
 } from "@/components/ui/collapsible";
 import nineBallUrl from "@/assets/9ball.svg";
 import eightBallUrl from "@/assets/8ball.svg";
-
-const ME_ID = 1;
-
-const initTables = () =>
-  Array.from({ length: 20 }, (_, i) => ({
-    id: i + 1,
-    p1: null as number | null,
-    p2: null as number | null,
-    s1: 0,
-    s2: 0,
-    phase: "idle" as "idle" | "active" | "done",
-  }));
 
 interface IScorePillProps {
   v: number;
@@ -52,28 +41,75 @@ const ScorePill = ({ v, active, winner, onPick }: IScorePillProps) => (
 );
 
 type PlayerStatus = "available" | "ready" | "playing";
-interface ILocalPlayer {
-  id: number;
-  name: string;
-  wins: number;
-  losses: number;
-  pts: number;
-  disabled: boolean;
-  status: PlayerStatus;
-}
 
 export const LeaguePage = () => {
-  const { data: session, isPending } = useSession();
-  const { players: leaguePlayers } = useLeagueContext();
+  const { leagueId } = useParams<{ leagueId: string }>();
+  const { data: session, isPending: sessionPending } = useSession();
+  const { league, isLoading: leagueLoading, myMemberId } = useLeagueContext();
 
-  const [players, setPlayers] = useState<ILocalPlayer[]>(() =>
-    leaguePlayers.map((p) => ({ ...p, status: "available" as PlayerStatus })),
-  );
-  const [tables, setTables] = useState(initTables());
+  const { data: activeMeeting, refetch: refetchMeeting } =
+    trpc.meeting.getActive.useQuery(
+      { leagueId: leagueId ?? "" },
+      { enabled: !!leagueId, refetchInterval: 5000 },
+    );
+
+  const utils = trpc.useUtils();
+  const invalidate = () => {
+    void utils.meeting.getActive.invalidate({ leagueId: leagueId ?? "" });
+    void utils.league.getById.invalidate({ leagueId: leagueId ?? "" });
+  };
+
+  const toggleReady = trpc.meeting.toggleReady.useMutation({
+    onSuccess: (data) => {
+      invalidate();
+      toast(
+        data.status === "ready"
+          ? "You're ready to play!"
+          : "Taking a break — see you soon!",
+      );
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const draw = trpc.meeting.draw.useMutation({
+    onSuccess: () => invalidate(),
+    onError: (e) => toast.error(e.message),
+  });
+
+  const updateScore = trpc.meeting.updateScore.useMutation({
+    onSuccess: () => void refetchMeeting(),
+  });
+
+  const submitScore = trpc.meeting.submitScore.useMutation({
+    onSuccess: () => {
+      invalidate();
+      setModal(null);
+      toast("Score submitted!");
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const takeBreak = trpc.meeting.takeBreak.useMutation({
+    onSuccess: () => {
+      invalidate();
+      setOptOutModal(false);
+      toast("Taking a break — see you soon!");
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const shufflePlayer = trpc.meeting.shufflePlayer.useMutation({
+    onSuccess: () => {
+      invalidate();
+      setOptOutModal(false);
+      toast("Swapped in — enjoy your break!");
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
   const [simPast7, setSimPast7] = useState(false);
-  const [modal, setModal] = useState<number | null>(null);
+  const [modal, setModal] = useState<string | null>(null); // tableId
   const [sv, setSv] = useState({ s1: 0, s2: 0 });
-  const [readyPending, setReadyPending] = useState(false);
   const [standingsOpen, setStandingsOpen] = useState(
     () => sessionStorage.getItem("standings-open") !== "false",
   );
@@ -84,7 +120,29 @@ export const LeaguePage = () => {
   const [optOutModal, setOptOutModal] = useState(false);
   const [standingsExpanded, setStandingsExpanded] = useState(false);
 
-  if (isPending) {
+  // Build enriched player list (members + meeting status)
+  const players = useMemo(() => {
+    if (!league) return [];
+    const statusMap = new Map<string, PlayerStatus>();
+    if (activeMeeting) {
+      for (const mp of activeMeeting.players) {
+        statusMap.set(mp.memberId, mp.status as PlayerStatus);
+      }
+    }
+    return league.members.map((m) => ({
+      id: m.id,
+      name: m.userName,
+      wins: m.wins,
+      losses: m.losses,
+      pts: m.pts,
+      disabled: m.disabled,
+      status: statusMap.get(m.id) ?? ("available" as PlayerStatus),
+    }));
+  }, [league, activeMeeting]);
+
+  const tables = activeMeeting?.tables ?? [];
+
+  if (sessionPending || leagueLoading) {
     return (
       <div className="flex flex-1 items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-primary" />
@@ -92,17 +150,17 @@ export const LeaguePage = () => {
     );
   }
 
-  if (!session) {
-    return <Navigate to="/login" replace />;
-  }
+  if (!session) return <Navigate to="/login" replace />;
 
-  const gp = (id: number) => players.find((p) => p.id === id);
-  const me = gp(ME_ID);
+  const gp = (id: string) => players.find((p) => p.id === id);
+  const me = myMemberId ? gp(myMemberId) : undefined;
   const myReady = me?.status === "ready";
   const readyList = players.filter((p) => p.status === "ready");
   const now = new Date();
   const isPast7 = simPast7 || now.getHours() >= 19;
   const canDraw = isPast7 && readyList.length >= 2;
+  const raceTo = is9ball ? 7 : 3;
+
   const sorted = [...players].sort((a, b) => {
     if (a.disabled !== b.disabled) return a.disabled ? 1 : -1;
     return b.pts - a.pts || b.wins - a.wins;
@@ -110,7 +168,7 @@ export const LeaguePage = () => {
 
   const INITIAL_LIMIT = 10;
   const BEFORE_ME = 4;
-  const meIndex = sorted.findIndex((p) => p.id === ME_ID);
+  const meIndex = sorted.findIndex((p) => p.id === myMemberId);
   const needsTruncation = sorted.length > INITIAL_LIMIT;
 
   type ScoreboardRow =
@@ -141,165 +199,56 @@ export const LeaguePage = () => {
       })),
     ];
   })();
+
   const myActiveTable = tables.find(
-    (t) => (t.p1 === ME_ID || t.p2 === ME_ID) && t.phase === "active",
+    (t) =>
+      (t.player1Id === myMemberId || t.player2Id === myMemberId) &&
+      t.status === "active",
   );
-  const raceTo = is9ball ? 7 : 3;
 
   const handleToggleReady = () => {
-    setReadyPending(true);
-    const nextReady = me?.status !== "ready";
-    setTimeout(() => {
-      setPlayers((prev) =>
-        prev.map((p) =>
-          p.id === ME_ID
-            ? { ...p, status: p.status === "ready" ? "available" : "ready" }
-            : p,
-        ),
-      );
-      toast(
-        nextReady
-          ? "You're ready to play!"
-          : "Taking a break — see you soon! 😴",
-      );
-      setReadyPending(false);
-    }, 1000);
+    if (!activeMeeting || !leagueId) return;
+    toggleReady.mutate({ leagueId, meetingId: activeMeeting.id });
   };
 
-  const demoAllReady = () =>
-    setPlayers((prev) =>
-      prev.map((p) =>
-        p.status === "available" ? { ...p, status: "ready" } : p,
-      ),
-    );
-
-  const draw = () => {
-    const pool = players.filter((p) => p.status === "ready");
-    const idle = tables.filter((t) => t.phase === "idle");
-    const shuffled = [...pool].sort(() => Math.random() - 0.5);
-    let nTables = tables.map((t) => ({ ...t }));
-    let nPlayers = players.map((p) => ({ ...p }));
-    let ti = 0;
-    for (let i = 0; i + 1 < shuffled.length && ti < idle.length; i += 2, ti++) {
-      const a = shuffled[i]!,
-        b = shuffled[i + 1]!,
-        tbl = idle[ti]!;
-      nTables = nTables.map((t) =>
-        t.id === tbl.id
-          ? { ...t, p1: a.id, p2: b.id, s1: 0, s2: 0, phase: "active" as const }
-          : t,
-      );
-      nPlayers = nPlayers.map((p) =>
-        p.id === a.id || p.id === b.id
-          ? { ...p, status: "playing" as const }
-          : p,
-      );
-    }
-    setTables(nTables);
-    setPlayers(nPlayers);
+  const handleDraw = () => {
+    if (!activeMeeting || !leagueId) return;
+    draw.mutate({ leagueId, meetingId: activeMeeting.id });
   };
 
-  const updateTableScore = (tid: number, side: "s1" | "s2", delta: number) => {
-    setTables((prev) =>
-      prev.map((t) =>
-        t.id === tid
-          ? { ...t, [side]: Math.max(0, Math.min(raceTo - 1, t[side] + delta)) }
-          : t,
-      ),
-    );
+  const handleUpdateTableScore = (
+    tableId: string,
+    player: "1" | "2",
+    delta: 1 | -1,
+  ) => {
+    updateScore.mutate({ tableId, player, delta, raceTo });
   };
 
-  const shufflePlayer = () => {
-    if (!myActiveTable) return;
-    const t = myActiveTable;
-    const available = players.filter(
-      (p) => p.status === "available" && p.id !== ME_ID,
-    );
-    if (!available.length) return;
-    const replacement =
-      available[Math.floor(Math.random() * available.length)]!;
-    const mySide = t.p1 === ME_ID ? "p1" : "p2";
-    setTables((prev) =>
-      prev.map((tbl) =>
-        tbl.id === t.id ? { ...tbl, [mySide]: replacement.id } : tbl,
-      ),
-    );
-    setPlayers((prev) =>
-      prev.map((p) => {
-        if (p.id === ME_ID) return { ...p, status: "available" as const };
-        if (p.id === replacement.id)
-          return { ...p, status: "playing" as const };
-        return p;
-      }),
-    );
-    setOptOutModal(false);
-    toast(
-      "Swapped in " + replacement.name.split(" ")[0] + " — enjoy your break!",
-    );
-  };
-
-  const takeBreak = () => {
-    if (!myActiveTable) return;
-    const t = myActiveTable;
-    const otherId = t.p1 === ME_ID ? t.p2 : t.p1;
-    setTables((prev) =>
-      prev.map((tbl) =>
-        tbl.id === t.id
-          ? { ...tbl, p1: null, p2: null, s1: 0, s2: 0, phase: "idle" as const }
-          : tbl,
-      ),
-    );
-    setPlayers((prev) =>
-      prev.map((p) => {
-        if (p.id === ME_ID || p.id === otherId)
-          return { ...p, status: "available" as const };
-        return p;
-      }),
-    );
-    setOptOutModal(false);
-    toast("Taking a break — see you soon! 😴");
-  };
-
-  const openModal = (tid: number) => {
-    const t = tables.find((t) => t.id === tid);
+  const openModal = (tableId: string) => {
+    const t = tables.find((t) => t.id === tableId);
     if (!t) return;
-    setSv({ s1: t.s1, s2: t.s2 });
-    setModal(tid);
+    setSv({ s1: t.score1, s2: t.score2 });
+    setModal(tableId);
   };
 
-  const submitScore = () => {
-    const { s1, s2 } = sv;
-    if ((s1 !== raceTo && s2 !== raceTo) || (s1 === raceTo && s2 === raceTo))
-      return;
-    const t = tables.find((t) => t.id === modal);
-    if (!t || t.p1 === null || t.p2 === null) return;
-    const wId = s1 === 3 ? t.p1 : t.p2;
-    const lId = s1 === 3 ? t.p2 : t.p1;
-    setPlayers((prev) =>
-      prev.map((p) => {
-        if (p.id === wId)
-          return {
-            ...p,
-            wins: p.wins + 1,
-            pts: p.pts + 2,
-            status: "available" as const,
-          };
-        if (p.id === lId)
-          return {
-            ...p,
-            losses: p.losses + 1,
-            pts: p.pts + 1,
-            status: "available" as const,
-          };
-        return p;
-      }),
-    );
-    setTables((prev) =>
-      prev.map((t) =>
-        t.id === modal ? { ...t, s1, s2, phase: "done" as const } : t,
-      ),
-    );
-    setModal(null);
+  const handleSubmitScore = () => {
+    if (!modal || !activeMeeting || !leagueId) return;
+    submitScore.mutate({
+      tableId: modal,
+      meetingId: activeMeeting.id,
+      leagueId,
+      raceTo,
+    });
+  };
+
+  const handleTakeBreak = () => {
+    if (!activeMeeting || !leagueId) return;
+    takeBreak.mutate({ leagueId, meetingId: activeMeeting.id });
+  };
+
+  const handleShufflePlayer = () => {
+    if (!activeMeeting || !leagueId) return;
+    shufflePlayer.mutate({ leagueId, meetingId: activeMeeting.id });
   };
 
   return (
@@ -317,234 +266,257 @@ export const LeaguePage = () => {
           )}
           <div>
             <div className="text-[10px] font-mono text-primary font-semibold tracking-[1.5px] uppercase leading-none">
-              8-Ball League
+              {league?.startTime
+                ? `${is9ball ? "9" : "8"}-Ball League`
+                : "8-Ball League"}
             </div>
             <h2 className="font-mono font-extrabold text-foreground leading-tight">
-              Lincoln TLV
+              {league?.name ?? "League"}
             </h2>
           </div>
         </div>
       </header>
 
       <div className="px-[13px] pt-[14px]">
-        <Button
-          onClick={handleToggleReady}
-          disabled={readyPending}
-          variant={
-            myReady || myActiveTable?.phase === "active" ? "outline" : "default"
-          }
-          size="lg"
-          className="w-full mb-4 font-mono text-xs"
-        >
-          {readyPending ? (
-            <Loader className="animate-spin" />
-          ) : myReady || myActiveTable?.phase === "active" ? (
-            "Take a Break"
-          ) : (
-            "Ready to Play"
-          )}
-        </Button>
-
-        {readyList.length > 0 && (
-          <div className="bg-card border border-border rounded-[10px] px-[13px] py-[10px] mb-[13px] text-xs">
-            <div className="text-primary mb-[7px]">
-              ✋ Ready —{" "}
-              {readyList.map((p) => p.name.split(" ")[0]).join(" · ")}
-            </div>
-            <div className="flex gap-2 flex-wrap">
-              {!isPast7 && (
-                <Button
-                  onClick={() => setSimPast7(true)}
-                  variant="ghost"
-                  size="sm"
-                  className="bg-tinted-btn-bg border border-tinted-btn-border text-tinted-btn-text text-[11px] h-auto py-1 px-[10px] rounded-[10px]"
-                >
-                  Simulate 7 PM
-                </Button>
-              )}
-              {canDraw && (
-                <Button
-                  onClick={draw}
-                  variant="secondary"
-                  size="sm"
-                  className="text-[11px] h-auto py-1 px-3 rounded-[10px]"
-                >
-                  Draw Tables
-                </Button>
-              )}
-              {!isPast7 && (
-                <span className="text-muted-foreground text-[11px] leading-6">
-                  Draw opens at 7:00 PM
-                </span>
-              )}
-            </div>
+        {!activeMeeting ? (
+          <div className="text-center text-neutral-500 text-sm py-8">
+            No active meeting tonight. Check back later or ask the admin to
+            activate one.
           </div>
-        )}
+        ) : activeMeeting.status === "idle" ? (
+          <div className="text-center text-muted-foreground text-sm py-8 border border-border rounded-xl">
+            Meeting #{activeMeeting.meetingNumber} is paused.
+            <br />
+            <span className="text-xs">Wait for the host to resume.</span>
+          </div>
+        ) : (
+          <>
+            <Button
+              onClick={handleToggleReady}
+              disabled={toggleReady.isPending}
+              variant={
+                myReady || myActiveTable?.status === "active"
+                  ? "outline"
+                  : "default"
+              }
+              size="lg"
+              className="w-full mb-4 font-mono text-xs"
+            >
+              {toggleReady.isPending ? (
+                <Loader className="animate-spin" />
+              ) : myReady || myActiveTable?.status === "active" ? (
+                "Take a Break"
+              ) : (
+                "Ready to Play"
+              )}
+            </Button>
 
-        {/* DEMO HELPER */}
-        {readyList.length === 0 && (
-          <Button
-            onClick={demoAllReady}
-            variant="outline"
-            className="w-full font-mono text-xs"
-          >
-            Demo: mark all players ready
-          </Button>
-        )}
-
-        {/* ACTIVE GAME BANNER */}
-        {myActiveTable &&
-          (() => {
-            const t = myActiveTable;
-            const p1 = t.p1 ? gp(t.p1) : null;
-            const p2 = t.p2 ? gp(t.p2) : null;
-            return (
-              <div className="bg-card border border-card-border rounded-xl px-[14px] py-[11px] my-4">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-[10px] font-bold text-primary tracking-[1.5px] uppercase">
-                    Your Game · Table {t.id}
-                  </span>
-                  <div className="flex items-center gap-[6px]">
-                    <span className="text-sm">
-                      <img
-                        src={is9ball ? nineBallUrl : eightBallUrl}
-                        alt="ball"
-                        className="w-4 h-4"
-                      />
-                    </span>
-                    <span className="text-[9px] font-bold uppercase tracking-[1px] whitespace-nowrap text-primary">
-                      {is9ball ? "9-BALL" : "8-BALL"}
-                    </span>
-                    <Switch checked={is9ball} onCheckedChange={setIs9ball} />
-                    <span className="text-[9px] font-bold text-secondary">
-                      ● LIVE
-                    </span>
-                  </div>
+            {readyList.length > 0 && (
+              <div className="bg-card border border-border rounded-[10px] px-[13px] py-[10px] mb-[13px] text-xs">
+                <div className="text-primary mb-[7px]">
+                  ✋ Ready —{" "}
+                  {readyList.map((p) => p.name.split(" ")[0]).join(" · ")}
                 </div>
-                <div className="flex items-center gap-2 mb-0.5">
-                  {/* Player 1 */}
-                  {(() => {
-                    const player = p1;
-                    const side = "s1" as const;
-                    return (
-                      <div className="flex-1 flex flex-col items-start gap-1.5">
-                        <span
-                          className={cn(
-                            "text-sm font-bold",
-                            player?.id === ME_ID
-                              ? "text-primary"
-                              : "text-foreground",
-                          )}
-                        >
-                          {player?.name ?? "N/A"}
-                        </span>
-                        <div className="flex items-center gap-1.5">
-                          <Button
-                            onClick={() => updateTableScore(t.id, side, -1)}
-                            variant="ghost"
-                            size="icon"
-                            className="w-10 h-10 rounded-full bg-tinted-btn-bg border border-tinted-btn-border text-tinted-btn-text text-xl"
-                          >
-                            −
-                          </Button>
-                          <Button
-                            onClick={() => updateTableScore(t.id, side, 1)}
-                            variant="ghost"
-                            size="icon"
-                            className="w-10 h-10 rounded-full bg-tinted-btn-bg border border-tinted-btn-border text-tinted-btn-text text-xl"
-                          >
-                            +
-                          </Button>
-                        </div>
-                      </div>
-                    );
-                  })()}
-
-                  {/* Score */}
-                  <div className="flex flex-col items-center gap-0.5">
-                    <h2 className="text-[32px] font-extrabold text-foreground m-0 tracking-[2px] text-center min-w-[72px]">
-                      <span
-                        className={
-                          t.s1 > 0 ? "text-score-active" : "text-score-dim"
-                        }
-                      >
-                        {t.s1}
-                      </span>
-                      <span className="text-muted-foreground text-xl"> — </span>
-                      <span
-                        className={
-                          t.s2 > 0 ? "text-score-active" : "text-score-dim"
-                        }
-                      >
-                        {t.s2}
-                      </span>
-                    </h2>
-                    <span className="text-[9px] text-primary uppercase tracking-[1px]">
-                      Race to {raceTo}
-                    </span>
-                  </div>
-
-                  {/* Player 2 */}
-                  {(() => {
-                    const player = p2;
-                    const side = "s2" as const;
-                    return (
-                      <div className="flex-1 flex flex-col items-end gap-1.5">
-                        <span
-                          className={cn(
-                            "text-sm font-bold",
-                            player?.id === ME_ID
-                              ? "text-secondary"
-                              : "text-foreground",
-                          )}
-                        >
-                          {player?.name ?? "N/A"}
-                        </span>
-                        <div className="flex items-center gap-1.5">
-                          <Button
-                            onClick={() => updateTableScore(t.id, side, -1)}
-                            variant="ghost"
-                            size="icon"
-                            className="w-10 h-10 rounded-full bg-tinted-btn-bg border border-tinted-btn-border text-tinted-btn-text text-xl"
-                          >
-                            −
-                          </Button>
-                          <Button
-                            onClick={() => updateTableScore(t.id, side, 1)}
-                            variant="ghost"
-                            size="icon"
-                            className="w-10 h-10 rounded-full bg-tinted-btn-bg border border-tinted-btn-border text-tinted-btn-text text-xl"
-                          >
-                            +
-                          </Button>
-                        </div>
-                      </div>
-                    );
-                  })()}
-                </div>
-                <div className="flex flex-col gap-2 mt-4">
-                  <Button
-                    onClick={() => openModal(t.id)}
-                    variant="default"
-                    size="sm"
-                  >
-                    Submit Score
-                  </Button>
-                  <div className="flex items-center gap-1">
-                    <p className="text-xs">Don't want to play?</p>
+                <div className="flex gap-2 flex-wrap">
+                  {!isPast7 && (
                     <Button
-                      onClick={() => setOptOutModal(true)}
-                      variant="link"
-                      size="xs"
-                      className="p-0"
+                      onClick={() => setSimPast7(true)}
+                      variant="ghost"
+                      size="sm"
+                      className="bg-tinted-btn-bg border border-tinted-btn-border text-tinted-btn-text text-[11px] h-auto py-1 px-[10px] rounded-[10px]"
                     >
-                      Click here to opt out
+                      Simulate 7 PM
                     </Button>
-                  </div>
+                  )}
+                  {canDraw && (
+                    <Button
+                      onClick={handleDraw}
+                      disabled={draw.isPending}
+                      variant="secondary"
+                      size="sm"
+                      className="text-[11px] h-auto py-1 px-3 rounded-[10px]"
+                    >
+                      Draw Tables
+                    </Button>
+                  )}
+                  {!isPast7 && (
+                    <span className="text-muted-foreground text-[11px] leading-6">
+                      Draw opens at 7:00 PM
+                    </span>
+                  )}
                 </div>
               </div>
-            );
-          })()}
+            )}
+
+            {/* ACTIVE GAME BANNER */}
+            {myActiveTable &&
+              (() => {
+                const t = myActiveTable;
+                const p1 = t.player1Id ? gp(t.player1Id) : null;
+                const p2 = t.player2Id ? gp(t.player2Id) : null;
+                return (
+                  <div className="bg-card border border-card-border rounded-xl px-[14px] py-[11px] my-4">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-[10px] font-bold text-primary tracking-[1.5px] uppercase">
+                        Your Game · Table {t.tableNumber}
+                      </span>
+                      <div className="flex items-center gap-[6px]">
+                        <span className="text-sm">
+                          <img
+                            src={is9ball ? nineBallUrl : eightBallUrl}
+                            alt="ball"
+                            className="w-4 h-4"
+                          />
+                        </span>
+                        <span className="text-[9px] font-bold uppercase tracking-[1px] whitespace-nowrap text-primary">
+                          {is9ball ? "9-BALL" : "8-BALL"}
+                        </span>
+                        <Switch
+                          checked={is9ball}
+                          onCheckedChange={setIs9ball}
+                        />
+                        <span className="text-[9px] font-bold text-secondary">
+                          ● LIVE
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 mb-0.5">
+                      {/* Player 1 */}
+                      {(() => {
+                        return (
+                          <div className="flex-1 flex flex-col items-start gap-1.5">
+                            <span
+                              className={cn(
+                                "text-sm font-bold",
+                                p1?.id === myMemberId
+                                  ? "text-primary"
+                                  : "text-foreground",
+                              )}
+                            >
+                              {p1?.name ?? "N/A"}
+                            </span>
+                            <div className="flex items-center gap-1.5">
+                              <Button
+                                onClick={() =>
+                                  handleUpdateTableScore(t.id, "1", -1)
+                                }
+                                variant="ghost"
+                                size="icon"
+                                className="w-10 h-10 rounded-full bg-tinted-btn-bg border border-tinted-btn-border text-tinted-btn-text text-xl"
+                              >
+                                −
+                              </Button>
+                              <Button
+                                onClick={() =>
+                                  handleUpdateTableScore(t.id, "1", 1)
+                                }
+                                variant="ghost"
+                                size="icon"
+                                className="w-10 h-10 rounded-full bg-tinted-btn-bg border border-tinted-btn-border text-tinted-btn-text text-xl"
+                              >
+                                +
+                              </Button>
+                            </div>
+                          </div>
+                        );
+                      })()}
+
+                      {/* Score */}
+                      <div className="flex flex-col items-center gap-0.5">
+                        <h2 className="text-[32px] font-extrabold text-foreground m-0 tracking-[2px] text-center min-w-[72px]">
+                          <span
+                            className={
+                              t.score1 > 0
+                                ? "text-score-active"
+                                : "text-score-dim"
+                            }
+                          >
+                            {t.score1}
+                          </span>
+                          <span className="text-muted-foreground text-xl">
+                            {" "}
+                            —{" "}
+                          </span>
+                          <span
+                            className={
+                              t.score2 > 0
+                                ? "text-score-active"
+                                : "text-score-dim"
+                            }
+                          >
+                            {t.score2}
+                          </span>
+                        </h2>
+                        <span className="text-[9px] text-primary uppercase tracking-[1px]">
+                          Race to {raceTo}
+                        </span>
+                      </div>
+
+                      {/* Player 2 */}
+                      {(() => {
+                        return (
+                          <div className="flex-1 flex flex-col items-end gap-1.5">
+                            <span
+                              className={cn(
+                                "text-sm font-bold",
+                                p2?.id === myMemberId
+                                  ? "text-secondary"
+                                  : "text-foreground",
+                              )}
+                            >
+                              {p2?.name ?? "N/A"}
+                            </span>
+                            <div className="flex items-center gap-1.5">
+                              <Button
+                                onClick={() =>
+                                  handleUpdateTableScore(t.id, "2", -1)
+                                }
+                                variant="ghost"
+                                size="icon"
+                                className="w-10 h-10 rounded-full bg-tinted-btn-bg border border-tinted-btn-border text-tinted-btn-text text-xl"
+                              >
+                                −
+                              </Button>
+                              <Button
+                                onClick={() =>
+                                  handleUpdateTableScore(t.id, "2", 1)
+                                }
+                                variant="ghost"
+                                size="icon"
+                                className="w-10 h-10 rounded-full bg-tinted-btn-bg border border-tinted-btn-border text-tinted-btn-text text-xl"
+                              >
+                                +
+                              </Button>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                    <div className="flex flex-col gap-2 mt-4">
+                      <Button
+                        onClick={() => openModal(t.id)}
+                        variant="default"
+                        size="sm"
+                      >
+                        Submit Score
+                      </Button>
+                      <div className="flex items-center gap-1">
+                        <p className="text-xs">Don't want to play?</p>
+                        <Button
+                          onClick={() => setOptOutModal(true)}
+                          variant="link"
+                          size="xs"
+                          className="p-0"
+                        >
+                          Click here to opt out
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+          </>
+        )}
 
         <Collapsible
           open={standingsOpen}
@@ -575,6 +547,11 @@ export const LeaguePage = () => {
                 <span className="text-center">L</span>
                 <span className="text-right">Pts</span>
               </div>
+              {visibleRows.length === 0 && (
+                <div className="px-3 py-4 text-center text-[12px] text-muted-foreground">
+                  No players yet.
+                </div>
+              )}
               {visibleRows.map((row) => {
                 if (row.kind === "hidden") {
                   return (
@@ -602,7 +579,7 @@ export const LeaguePage = () => {
                       "text-amber-600",
                     ] as string[]
                   )[rank - 1] ?? "";
-                const isMe = p.id === ME_ID;
+                const isMe = p.id === myMemberId;
                 const badge =
                   (
                     { playing: "", ready: " ✋", available: "" } as Record<
@@ -663,129 +640,142 @@ export const LeaguePage = () => {
         </Collapsible>
 
         {/* TABLES GRID */}
-        <Collapsible
-          open={tablesOpen}
-          onOpenChange={(open) => {
-            setTablesOpen(open);
-            sessionStorage.setItem("tables-open", String(open));
-          }}
-          className="my-4"
-        >
-          <CollapsibleTrigger className="flex items-center justify-between w-full bg-transparent border-none cursor-pointer p-0 mb-4">
-            <h2 className="text-[11px] font-bold text-primary tracking-[1.5px] uppercase m-0 flex items-center">
-              <Play className="w-4 h-4 mr-2" /> Tables
-            </h2>
-            <ChevronDown
-              size={14}
-              className={cn(
-                "text-muted-foreground transition-transform duration-200",
-                !tablesOpen && "-rotate-90",
-              )}
-            />
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {tables.map((t) => {
-                const p1 = t.p1 ? gp(t.p1) : null;
-                const p2 = t.p2 ? gp(t.p2) : null;
-                const isLive = t.phase === "active";
-                const isDone = t.phase === "done";
-                const myTable = (t.p1 === ME_ID || t.p2 === ME_ID) && isLive;
+        {activeMeeting && (
+          <Collapsible
+            open={tablesOpen}
+            onOpenChange={(open) => {
+              setTablesOpen(open);
+              sessionStorage.setItem("tables-open", String(open));
+            }}
+            className="my-4"
+          >
+            <CollapsibleTrigger className="flex items-center justify-between w-full bg-transparent border-none cursor-pointer p-0 mb-4">
+              <h2 className="text-[11px] font-bold text-primary tracking-[1.5px] uppercase m-0 flex items-center">
+                <Play className="w-4 h-4 mr-2" /> Tables
+              </h2>
+              <ChevronDown
+                size={14}
+                className={cn(
+                  "text-muted-foreground transition-transform duration-200",
+                  !tablesOpen && "-rotate-90",
+                )}
+              />
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {tables.map((t) => {
+                  const p1 = t.player1Id ? gp(t.player1Id) : null;
+                  const p2 = t.player2Id ? gp(t.player2Id) : null;
+                  const isLive = t.status === "active";
+                  const isDone = t.status === "done";
+                  const myTable =
+                    (t.player1Id === myMemberId ||
+                      t.player2Id === myMemberId) &&
+                    isLive;
 
-                return (
-                  <div
-                    key={t.id}
-                    className={cn(
-                      "border rounded-[10px] px-[10px] pt-[9px] pb-2",
-                      myTable
-                        ? "bg-game-banner border-game-banner-border"
-                        : isDone
-                          ? "bg-card border-card-border"
-                          : "bg-card border-border",
-                    )}
-                  >
-                    <div className="flex justify-between items-center mb-1.5">
-                      <span
-                        className={cn(
-                          "text-[10px] font-bold tracking-[.4px]",
-                          myTable ? "text-primary" : "text-table-header",
-                        )}
-                      >
-                        TABLE {t.id}
-                      </span>
-                      {isLive && (
-                        <span className="text-[9px] font-bold text-secondary">
-                          ● LIVE
-                        </span>
+                  return (
+                    <div
+                      key={t.id}
+                      className={cn(
+                        "border rounded-[10px] px-[10px] pt-[9px] pb-2",
+                        myTable
+                          ? "bg-game-banner border-game-banner-border"
+                          : isDone
+                            ? "bg-card border-card-border"
+                            : "bg-card border-border",
                       )}
-                      {isDone && (
-                        <span className="text-[9px] font-bold text-primary">
-                          ✓ DONE
-                        </span>
-                      )}
-                      {!isLive && !isDone && (
-                        <span className="text-[9px] font-bold text-card-border">
-                          ● Idle
-                        </span>
-                      )}
-                    </div>
-
-                    {(
-                      [
-                        { player: p1, score: t.s1, won: t.s1 === 3 && isDone },
-                        { player: p2, score: t.s2, won: t.s2 === 3 && isDone },
-                      ] as const
-                    ).map(({ player, score, won }, pi) => (
-                      <div
-                        key={pi}
-                        className={cn(
-                          "flex justify-between items-center",
-                          pi === 0 && "mb-0.5",
-                        )}
-                      >
+                    >
+                      <div className="flex justify-between items-center mb-1.5">
                         <span
                           className={cn(
-                            "text-[12px] max-w-[60%] truncate",
-                            !player
-                              ? "text-foreground"
-                              : player.id === ME_ID
-                                ? "text-me font-bold text-table-header"
-                                : won
-                                  ? "text-foreground font-bold"
-                                  : "text-foreground",
+                            "text-[10px] font-bold tracking-[.4px]",
+                            myTable ? "text-primary" : "text-table-header",
                           )}
                         >
-                          {player ? player.name : "N/A"}
+                          TABLE {t.tableNumber}
                         </span>
-                        <span
-                          className={cn(
-                            "text-sm font-extrabold ml-1",
-                            won
-                              ? "text-secondary"
-                              : score > 0
-                                ? "text-score-active"
-                                : "text-score-dim",
-                          )}
-                        >
-                          {score}
-                        </span>
+                        {isLive && (
+                          <span className="text-[9px] font-bold text-secondary">
+                            ● LIVE
+                          </span>
+                        )}
+                        {isDone && (
+                          <span className="text-[9px] font-bold text-primary">
+                            ✓ DONE
+                          </span>
+                        )}
+                        {!isLive && !isDone && (
+                          <span className="text-[9px] font-bold text-card-border">
+                            ● Idle
+                          </span>
+                        )}
                       </div>
-                    ))}
-                  </div>
-                );
-              })}
-            </div>
-          </CollapsibleContent>
-        </Collapsible>
+
+                      {(
+                        [
+                          {
+                            player: p1,
+                            score: t.score1,
+                            won: t.score1 === raceTo && isDone,
+                          },
+                          {
+                            player: p2,
+                            score: t.score2,
+                            won: t.score2 === raceTo && isDone,
+                          },
+                        ] as const
+                      ).map(({ player, score, won }, pi) => (
+                        <div
+                          key={pi}
+                          className={cn(
+                            "flex justify-between items-center",
+                            pi === 0 && "mb-0.5",
+                          )}
+                        >
+                          <span
+                            className={cn(
+                              "text-[12px] max-w-[60%] truncate",
+                              !player
+                                ? "text-foreground"
+                                : player.id === myMemberId
+                                  ? "text-me font-bold text-table-header"
+                                  : won
+                                    ? "text-foreground font-bold"
+                                    : "text-foreground",
+                            )}
+                          >
+                            {player ? player.name : "N/A"}
+                          </span>
+                          <span
+                            className={cn(
+                              "text-sm font-extrabold ml-1",
+                              won
+                                ? "text-secondary"
+                                : score > 0
+                                  ? "text-score-active"
+                                  : "text-score-dim",
+                            )}
+                          >
+                            {score}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })}
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+        )}
       </div>
 
       {/* SCORE MODAL */}
       {modal !== null &&
         (() => {
           const t = tables.find((t) => t.id === modal);
-          if (!t || t.p1 === null || t.p2 === null) return null;
-          const p1 = gp(t.p1),
-            p2 = gp(t.p2);
+          if (!t || !t.player1Id || !t.player2Id) return null;
+          const p1 = gp(t.player1Id),
+            p2 = gp(t.player2Id);
           const valid = (sv.s1 === raceTo) !== (sv.s2 === raceTo);
           return (
             <div
@@ -800,7 +790,7 @@ export const LeaguePage = () => {
                   Submit Score
                 </div>
                 <div className="text-center text-xs text-primary mb-[22px]">
-                  Table {t.id} · Race to {raceTo}
+                  Table {t.tableNumber} · Race to {raceTo}
                 </div>
 
                 {[
@@ -814,7 +804,9 @@ export const LeaguePage = () => {
                     <span
                       className={cn(
                         "text-[15px] font-bold",
-                        player?.id === ME_ID ? "text-me" : "text-foreground",
+                        player?.id === myMemberId
+                          ? "text-me"
+                          : "text-foreground",
                       )}
                     >
                       {player?.name}
@@ -844,8 +836,8 @@ export const LeaguePage = () => {
                 )}
 
                 <Button
-                  onClick={submitScore}
-                  disabled={!valid}
+                  onClick={handleSubmitScore}
+                  disabled={!valid || submitScore.isPending}
                   className={cn(
                     "w-full h-auto py-[15px] text-base mt-1.5 rounded-[10px]",
                     valid
@@ -853,7 +845,7 @@ export const LeaguePage = () => {
                       : "bg-muted text-muted-foreground cursor-not-allowed",
                   )}
                 >
-                  Confirm Result
+                  {submitScore.isPending ? "Submitting…" : "Confirm Result"}
                 </Button>
               </div>
             </div>
@@ -864,9 +856,8 @@ export const LeaguePage = () => {
       {optOutModal &&
         myActiveTable &&
         (() => {
-          const t = myActiveTable;
           const hasAvailable = players.some(
-            (p) => p.status === "available" && p.id !== ME_ID,
+            (p) => p.status === "available" && p.id !== myMemberId,
           );
           return (
             <div
@@ -881,12 +872,12 @@ export const LeaguePage = () => {
                   Opt Out
                 </div>
                 <div className="text-center text-xs text-primary mb-[22px]">
-                  Table {t.id}
+                  Table {myActiveTable.tableNumber}
                 </div>
 
                 <Button
-                  onClick={shufflePlayer}
-                  disabled={!hasAvailable}
+                  onClick={handleShufflePlayer}
+                  disabled={!hasAvailable || shufflePlayer.isPending}
                   variant="outline"
                   className={cn(
                     "w-full h-auto flex-col items-start px-4 py-[14px] text-left gap-0.5 mb-2.5 rounded-[10px]",
@@ -906,7 +897,8 @@ export const LeaguePage = () => {
                 </Button>
 
                 <Button
-                  onClick={takeBreak}
+                  onClick={handleTakeBreak}
+                  disabled={takeBreak.isPending}
                   variant="outline"
                   className="w-full h-auto flex-col items-start px-4 py-[14px] text-left gap-0.5 mb-2.5 rounded-[10px] bg-rose-950 border-rose-900 text-rose-300"
                 >
