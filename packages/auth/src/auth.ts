@@ -1,10 +1,11 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { db } from "@my-app/db";
+import { db, users, accounts, sessions, verifications } from "@my-app/db";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: "pg",
+    schema: { user: users, account: accounts, session: sessions, verification: verifications },
   }),
   socialProviders: {
     google: {
@@ -28,9 +29,12 @@ export const auth = betterAuth({
       maxAge: 5 * 60, // 5 minutes cache
     },
   },
-  trustedOrigins: process.env["BETTER_AUTH_URL"]
-    ? [process.env["BETTER_AUTH_URL"]]
-    : ["http://localhost:5173", "http://localhost:3000"],
+  trustedOrigins: [
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "http://localhost:5175",
+    process.env["BETTER_AUTH_URL"] ?? "http://localhost:3001",
+  ],
 });
 
 export type Auth = typeof auth;

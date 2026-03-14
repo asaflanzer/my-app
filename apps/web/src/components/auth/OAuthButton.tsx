@@ -15,9 +15,13 @@ const PROVIDER_ICONS: Record<Provider, string> = {
   apple: "",
 };
 
-export const OAuthButton = ({ provider, label, callbackURL = "/dashboard" }: OAuthButtonProps) => {
-  const handleClick = () => {
-    signIn.social({ provider, callbackURL });
+export const OAuthButton = ({ provider, label, callbackURL = `${window.location.origin}/` }: OAuthButtonProps) => {
+  const handleClick = async () => {
+    const result = await signIn.social({ provider, callbackURL });
+    if (result?.error) {
+      console.error(`[${provider} sign-in error]`, result.error);
+      alert(`Sign-in failed: ${result.error.message ?? result.error.status}`);
+    }
   };
 
   return (

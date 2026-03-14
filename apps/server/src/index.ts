@@ -14,8 +14,10 @@ app.use("*", logger());
 // CORS — allow the Vite dev server and any configured origin
 const allowedOrigins = [
   "http://localhost:5173",
-  process.env["BETTER_AUTH_URL"] ?? "http://localhost:3000",
-].filter(Boolean);
+  "http://localhost:5174",
+  "http://localhost:5175",
+  process.env["BETTER_AUTH_URL"] ?? "http://localhost:3001",
+];
 
 app.use(
   "*",
@@ -27,7 +29,7 @@ app.use(
   }),
 );
 
-// Better Auth — handles all /api/auth/* routes (OAuth redirects, callbacks, sessions)
+// Better Auth — handles all /api * routes (OAuth redirects, callbacks, sessions)
 app.on(["GET", "POST"], "/api/auth/**", (c) => auth.handler(c.req.raw));
 
 // tRPC
@@ -43,7 +45,7 @@ app.use("/trpc/*", (c) =>
 // Health check
 app.get("/health", (c) => c.json({ ok: true }));
 
-const port = parseInt(process.env["PORT"] ?? "3000");
+const port = parseInt(process.env["PORT"] ?? "3001");
 
 serve({ fetch: app.fetch, port }, () => {
   console.log(`Server running at http://localhost:${port}`);

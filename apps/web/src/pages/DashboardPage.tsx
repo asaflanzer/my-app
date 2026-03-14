@@ -1,9 +1,9 @@
-import { Navigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { useSession, signOut } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const DashboardPage = () => {
+  const navigate = useNavigate();
   const { data: session, isPending } = useSession();
 
   if (isPending) {
@@ -19,33 +19,30 @@ export const DashboardPage = () => {
   }
 
   const handleSignOut = async () => {
-    await signOut({ fetchOptions: { onSuccess: () => window.location.replace("/login") } });
+    await signOut({
+      fetchOptions: { onSuccess: () => window.location.replace("/login") },
+    });
   };
 
   return (
-    <div className="min-h-screen bg-background p-8">
-      <div className="mx-auto max-w-2xl space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Dashboard</h1>
-          <Button variant="outline" onClick={handleSignOut}>
-            Sign out
+    <div className="flex min-h-screen flex-col bg-background">
+      <header className="flex items-center justify-between px-8 py-4">
+        <span className="text-xl font-bold">Game On</span>
+        <Button variant="outline" size="sm" onClick={handleSignOut}>
+          Sign out
+        </Button>
+      </header>
+      <main className="flex flex-1 flex-col items-center justify-center gap-8 p-8">
+        <h1 className="text-4xl font-bold">
+          Welcome, {session.user.name ?? session.user.email}
+        </h1>
+        <div className="flex flex-col gap-3 w-full max-w-xs">
+          <Button size="lg" onClick={() => navigate("/tournaments")}>Join Tournament</Button>
+          <Button size="lg" variant="outline" onClick={() => navigate("/create-tournament")}>
+            Host Tournament
           </Button>
         </div>
-        <Card>
-          <CardHeader>
-            <CardTitle>Your Profile</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <p>
-              <span className="font-medium">Name:</span>{" "}
-              {session.user.name ?? "Not set"}
-            </p>
-            <p>
-              <span className="font-medium">Email:</span> {session.user.email}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      </main>
     </div>
   );
 };

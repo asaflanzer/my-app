@@ -32,7 +32,7 @@ export default function RootLayout() {
     trpc.createClient({
       links: [
         httpBatchLink({
-          url: `${process.env["EXPO_PUBLIC_API_URL"] ?? "http://localhost:3000"}/trpc`,
+          url: `${process.env["EXPO_PUBLIC_API_URL"] ?? "http://localhost:3001"}/trpc`,
         }),
       ],
     }),
