@@ -4,48 +4,62 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 240 5.9% 10%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
+    --background: 0 0% 100%;         /* white */
+    --foreground: 164 87% 7%;        /* emerald-950 */
+    --card: 0 0% 96%;                /* neutral-100 */
+    --card-foreground: 0 0% 9%;      /* neutral-900 */
+    --card-border: 0 0% 64%;         /* neutral-400 */
+    --popover: 163 75% 9%;
+    --popover-foreground: 152 81% 96%;
+    --primary: 158 64% 52%;          /* emerald-400 */
+    --primary-foreground: 164 87% 7%;
+    --secondary: 38 92% 50%;          /* amber-500 */
+    --secondary-foreground: 152 76% 91%;
+    --muted: 164 60% 14%;
+    --muted-foreground: 156 72% 67%; /* emerald-300 */
+    --accent: 164 60% 19%;
+    --accent-foreground: 152 76% 91%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 240 10% 3.9%;
+    --border: 220 13% 91%;           /* light grey */
+    --input: 220 13% 91%;
+    --ring: 158 64% 52%;             /* emerald-400 */
     --radius: 0.5rem;
+    --game-banner: 163 75% 7%;              /* #0e1e0e - active game bg */
+    --game-banner-foreground: 152 81% 96%; /* always-light text on dark banner */
+    --game-banner-border: 161 56% 25%;     /* emerald-800 equivalent */
+    --score-dim: 164 20% 19%;              /* #2a3a28 - zero score */
+    --score-active: 152 22% 77%;           /* #b8d0b8 - non-zero score */
+    --me-color: 127 53% 71%;              /* #9ddb8a - me highlight */
   }
 
   .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 240 5.9% 10%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
+    --background: 0 0% 5%;           /* near black */
+    --foreground: 152 81% 96%;
+    --card: 0 0% 9%;                 /* neutral-900 */
+    --card-foreground: 0 0% 96%;     /* neutral-100 */
+    --card-border: 0 0% 25%;         /* neutral-700 */
+    --popover: 163 75% 9%;
+    --popover-foreground: 152 81% 96%;
+    --primary: 158 64% 52%;
+    --primary-foreground: 164 87% 7%;
+    --secondary: 38 92% 50%;          /* amber-500 */
+    --secondary-foreground: 152 76% 91%;
+    --muted: 164 60% 14%;
+    --muted-foreground: 156 72% 67%;
+    --accent: 164 60% 19%;
+    --accent-foreground: 152 76% 91%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
+    --border: 164 60% 19%;
+    --input: 164 60% 19%;
+    --ring: 158 64% 52%;
+    --game-banner: 163 75% 7%;              /* #0e1e0e - active game bg */
+    --game-banner-foreground: 152 81% 96%; /* always-light text on dark banner */
+    --game-banner-border: 161 56% 25%;     /* emerald-800 equivalent */
+    --score-dim: 164 20% 19%;              /* #2a3a28 - zero score */
+    --score-active: 152 22% 77%;           /* #b8d0b8 - non-zero score */
+    --me-color: 127 53% 71%;              /* #9ddb8a - me highlight */
   }
 }
 
@@ -53,20 +67,21 @@
   * {
     @apply border-border;
   }
+  html {
+    border: none;
+    overflow-x: hidden;
+  }
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+    overflow-x: hidden;
   }
 }
 
-@keyframes fade-out {
-  to { opacity: 0; }
-}
-
-@keyframes ball-appear {
-  0%   { opacity: 0; transform: scale(0.2) rotate(-15deg); }
-  70%  { opacity: 1; transform: scale(1.12) rotate(5deg); }
-  100% { opacity: 1; transform: scale(1) rotate(0deg); }
+@keyframes ball-spin-load {
+  0%   { opacity: 0; transform: scale(0.5) rotate(0deg); }
+  10%  { opacity: 1; transform: scale(1.05) rotate(540deg); }
+  100% { opacity: 1; transform: scale(1) rotate(3600deg); }
 }
 
 @keyframes fade-down {

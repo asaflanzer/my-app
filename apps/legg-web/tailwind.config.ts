@@ -17,6 +17,7 @@ export default {
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
+          border: "hsl(var(--card-border))",
         },
         popover: {
           DEFAULT: "hsl(var(--popover))",
@@ -45,6 +46,14 @@ export default {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
+        "game-banner": {
+          DEFAULT: "hsl(var(--game-banner))",
+          foreground: "hsl(var(--game-banner-foreground))",
+          border: "hsl(var(--game-banner-border))",
+        },
+        "score-dim": "hsl(var(--score-dim))",
+        "score-active": "hsl(var(--score-active))",
+        me: "hsl(var(--me-color))",
       },
     },
   },

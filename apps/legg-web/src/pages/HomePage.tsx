@@ -1,29 +1,34 @@
-import { useNavigate } from "react-router-dom";
-import { Loader, MapPin } from "lucide-react";
+import { useNavigate, Navigate } from "react-router-dom";
+import { MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useSession } from "@/lib/auth-client";
 import eightBallUrl from "@/assets/8ball.svg";
 
 export const HomePage = () => {
   const navigate = useNavigate();
+  const { data: session, isPending } = useSession();
+
+  if (isPending) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#0a0a0a]">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-primary" />
+      </div>
+    );
+  }
+
+  if (session) {
+    return <Navigate to="/league/lincoln-tlv" replace />;
+  }
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-8 bg-[#0a0a0a]">
-      <div className="relative h-24 w-24">
-        <Loader
-          className="absolute inset-0 h-full w-full text-white"
-          style={{
-            animation:
-              "spin 0.25s linear infinite, fade-out 0.25s ease-out 0.6s forwards",
-          }}
-        />
+      <div className="h-24 w-24">
         <img
           src={eightBallUrl}
           alt="8 ball"
-          className="absolute inset-0 h-full w-full"
+          className="h-full w-full"
           style={{
-            opacity: 0,
-            animation:
-              "ball-appear 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.6s forwards",
+            animation: "ball-spin-load 1.2s ease-out forwards",
           }}
         />
       </div>
@@ -32,12 +37,18 @@ export const HomePage = () => {
         className="text-4xl font-bold tracking-widest text-white"
         style={{
           opacity: 0,
-          animation: "fade-down 0.5s ease-out 1.1s forwards",
+          animation: "fade-down 0.5s ease-out 1.2s forwards",
         }}
       >
         Legg
       </h1>
-      <h2 className="text-lg text-gray-400 uppercase tracking-widest">
+      <h2
+        className="text-lg text-gray-400 uppercase tracking-widest"
+        style={{
+          opacity: 0,
+          animation: "fade-down 0.5s ease-out 1.6s forwards",
+        }}
+      >
         <div className="flex items-center gap-2">
           <MapPin className="h-4 w-4 text-gray-400" />
           Lincoln League, Tel Aviv
@@ -47,12 +58,12 @@ export const HomePage = () => {
       <div
         style={{
           opacity: 0,
-          animation: "fade-up 0.4s ease-out 1.5s forwards",
+          animation: "fade-up 0.4s ease-out 2s forwards",
         }}
       >
         <Button
           size="lg"
-          className="px-12 text-base uppercase tracking-widest bg-stone-500 text-black"
+          className="px-12 text-base uppercase tracking-widest text-black"
           onClick={() => navigate("/login")}
         >
           Login
