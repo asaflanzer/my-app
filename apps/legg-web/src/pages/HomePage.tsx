@@ -39,7 +39,7 @@ export const HomePage = () => {
       </div>
 
       <h1
-        className="text-4xl font-bold tracking-widest text-white uppercase font-mono"
+        className="text-4xl font-bold tracking-widest text-white uppercase"
         style={{
           opacity: 0,
           animation: "fade-down 0.5s ease-out 1.2s forwards",
@@ -54,7 +54,7 @@ export const HomePage = () => {
           animation: "fade-down 0.5s ease-out 1.6s forwards",
         }}
       >
-        <div className="flex items-center gap-2 font-mono">
+        <div className="flex items-center gap-2">
           Pool League &amp; Tournaments
         </div>
       </h2>
@@ -67,7 +67,7 @@ export const HomePage = () => {
       >
         <Button
           size="lg"
-          className="px-12 text-base uppercase tracking-widest text-black font-mono"
+          className="px-12 text-base uppercase tracking-widest text-black"
           onClick={() => navigate("/login")}
         >
           Login

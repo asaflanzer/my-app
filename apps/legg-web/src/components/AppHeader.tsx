@@ -63,16 +63,16 @@ export const AppHeader = () => {
             <Menu className="h-5 w-5" />
           </Button>
         </DrawerTrigger>
-        <h1 className="ml-1 text-2xl font-bold text-primary uppercase tracking-widest font-mono">
+        <h1 className="ml-1 text-2xl font-bold text-primary uppercase tracking-widest">
           Legg
         </h1>
         <DrawerContent className="w-1/2 h-full top-0 left-0 mt-0 rounded-none bg-card border-r border-card-border text-card-foreground">
           <DrawerHeader className="text-left">
-            <DrawerTitle className="text-primary text-2xl font-bold font-mono uppercase tracking-widest">
+            <DrawerTitle className="text-primary text-2xl font-bold uppercase tracking-widest">
               Legg
             </DrawerTitle>
             {session?.user.name && (
-              <p className="text-sm text-primary font-mono">
+              <p className="text-sm text-primary">
                 Welcome,{" "}
                 <span className="font-semibold text-primary">
                   {session.user.name.split(" ")[0]}

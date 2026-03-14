@@ -88,7 +88,7 @@
     overflow-x: hidden;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-mono;
     font-feature-settings: "rlig" 1, "calt" 1;
     overflow-x: hidden;
   }

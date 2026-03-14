@@ -1,7 +1,14 @@
 import { useState, useMemo } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
-import { ChevronDown, Loader, Logs, Tablet } from "lucide-react";
+import {
+  ChevronDown,
+  Loader,
+  Logs,
+  MinusIcon,
+  PlusIcon,
+  Tablet,
+} from "lucide-react";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -290,7 +297,7 @@ export const LeaguePage = () => {
         )}
       </header>
 
-      <div className="px-[13px] pt-[14px]">
+      <div className="px-[13px] pt-[20px]">
         {!activeMeeting ? (
           <div className="text-center text-neutral-500 text-sm py-8">
             No active meeting tonight. Check back later or ask the admin to
@@ -313,7 +320,7 @@ export const LeaguePage = () => {
                   : "default"
               }
               size="lg"
-              className="w-full mb-4 font-mono text-xs"
+              className="w-full mb-4 text-xs"
             >
               {toggleReady.isPending ? (
                 <Loader className="animate-spin" />
@@ -370,11 +377,17 @@ export const LeaguePage = () => {
                 return (
                   <div className="bg-card border border-card-border rounded-xl px-[14px] py-[11px] my-4">
                     <div className="flex justify-between items-center mb-2">
-                      <span className="text-[10px] font-bold text-primary tracking-[1.5px] uppercase">
-                        Your Game · Table {t.tableNumber}
+                      <span className="text-[11px] font-bold text-neutral-500 tracking-wider uppercase">
+                        <span className="text-[11px] text-amber-500">
+                          Table{" "}
+                          <span className="text-[15px] text-amber-500">
+                            {t.tableNumber}
+                          </span>
+                        </span>{" "}
+                        Playing Now
                       </span>
                       <div className="flex items-center gap-[6px]">
-                        <span className="text-[9px] font-bold uppercase tracking-[1px] whitespace-nowrap text-foreground">
+                        <span className="text-[11px] font-bold uppercase tracking-[1px] whitespace-nowrap text-foreground">
                           {is9ball ? "9-BALL" : "8-BALL"}
                         </span>
                         <Switch
@@ -404,7 +417,7 @@ export const LeaguePage = () => {
                                 size="icon"
                                 className="w-10 h-10 rounded-full bg-tinted-btn-bg border border-tinted-btn-border text-tinted-btn-text text-xl"
                               >
-                                −
+                                <MinusIcon className="w-4 h-4" />
                               </Button>
                               <Button
                                 onClick={() =>
@@ -414,7 +427,7 @@ export const LeaguePage = () => {
                                 size="icon"
                                 className="w-10 h-10 rounded-full bg-tinted-btn-bg border border-tinted-btn-border text-tinted-btn-text text-xl"
                               >
-                                +
+                                <PlusIcon className="w-4 h-4" />
                               </Button>
                             </div>
                           </div>
@@ -447,7 +460,7 @@ export const LeaguePage = () => {
                             {t.score2}
                           </span>
                         </h2>
-                        <span className="text-[9px] text-primary uppercase tracking-[1px]">
+                        <span className="text-[11px] text-primary uppercase tracking-[1px]">
                           Race to {raceTo}
                         </span>
                       </div>
@@ -475,7 +488,7 @@ export const LeaguePage = () => {
                                 size="icon"
                                 className="w-10 h-10 rounded-full bg-tinted-btn-bg border border-tinted-btn-border text-tinted-btn-text text-xl"
                               >
-                                −
+                                <MinusIcon className="w-4 h-4" />
                               </Button>
                               <Button
                                 onClick={() =>
@@ -485,7 +498,7 @@ export const LeaguePage = () => {
                                 size="icon"
                                 className="w-10 h-10 rounded-full bg-tinted-btn-bg border border-tinted-btn-border text-tinted-btn-text text-xl"
                               >
-                                +
+                                <PlusIcon className="w-4 h-4" />
                               </Button>
                             </div>
                           </div>
@@ -508,7 +521,7 @@ export const LeaguePage = () => {
                           size="xs"
                           className="p-0"
                         >
-                          Click here to opt out
+                          Opt out
                         </Button>
                       </div>
                     </div>

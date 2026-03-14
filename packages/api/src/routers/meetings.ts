@@ -298,7 +298,7 @@ export const meetingRouter = router({
 
       const field = input.player === "1" ? "score1" : "score2";
       const current = input.player === "1" ? table.score1 : table.score2;
-      const newScore = Math.max(0, Math.min(input.raceTo - 1, current + input.delta));
+      const newScore = Math.max(0, Math.min(input.raceTo, current + input.delta));
 
       await ctx.db
         .update(matchTables)

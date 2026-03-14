@@ -66,7 +66,7 @@ export const ChooseLeaguePage = () => {
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-primary" />
         ) : leagues && leagues.length > 0 ? (
           <div className="w-full max-w-sm space-y-3 px-8">
-            <p className="text-sm text-neutral-500 uppercase tracking-widest font-mono text-center">
+            <p className="text-sm text-neutral-500 uppercase tracking-widest text-center">
               Your Leagues
             </p>
             {leagues.map((league) => (
@@ -76,7 +76,7 @@ export const ChooseLeaguePage = () => {
                 onClick={() => navigate(`/league/${league.id}`)}
                 className="w-full"
               >
-                <div className="text-foreground font-mono">{league.name}</div>
+                <div className="text-foreground">{league.name}</div>
               </Button>
             ))}
           </div>
@@ -90,7 +90,7 @@ export const ChooseLeaguePage = () => {
           availableLeagues &&
           availableLeagues.length > 0 && (
             <div className="w-full max-w-sm space-y-3 px-8">
-              <p className="text-sm text-muted-foreground uppercase tracking-widest font-mono text-center">
+              <p className="text-sm text-muted-foreground uppercase tracking-widest text-center">
                 Join a League
               </p>
               <div className="space-y-2">
@@ -127,13 +127,13 @@ export const ChooseLeaguePage = () => {
                 size="sm"
                 variant="outline"
                 onClick={() => setShowCreate(true)}
-                className="gap-2 w-full font-mono"
+                className="gap-2 w-full"
               >
                 <Plus className="h-4 w-4" /> Host a League
               </Button>
             ) : (
               <div className="w-full max-w-sm space-y-4 bg-card border border-card-border rounded-xl p-5">
-                <h2 className="font-bold text-sm uppercase tracking-widest font-mono">
+                <h2 className="font-bold text-sm uppercase tracking-widest">
                   New League
                 </h2>
                 <div className="space-y-1.5">

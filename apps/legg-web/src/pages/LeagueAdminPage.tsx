@@ -285,7 +285,7 @@ export const LeagueAdminPage = () => {
         </Breadcrumb>
       </header>
       <main className="mx-auto max-w-2xl px-4 py-6 space-y-8">
-        <h1 className="text-2xl font-bold text-foreground uppercase tracking-widest font-mono">
+        <h1 className="text-2xl font-bold text-foreground uppercase tracking-widest">
           Admin
         </h1>
 
@@ -385,7 +385,7 @@ export const LeagueAdminPage = () => {
               onClick={() => setMeetingsOpen((o) => !o)}
             >
               <div className="flex items-center gap-0">
-                <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-widest font-mono">
+                <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-widest">
                   Meetings
                 </h2>
                 <Button
@@ -569,7 +569,7 @@ export const LeagueAdminPage = () => {
             className="flex w-full items-center justify-between"
             onClick={() => setPlayoffsOpen((o) => !o)}
           >
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-widest font-mono">
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-widest">
               Playoffs
             </h2>
             <div className="flex items-center gap-2 text-sm">
@@ -592,7 +592,7 @@ export const LeagueAdminPage = () => {
               <Button
                 disabled={!canActivatePlayoff}
                 size="sm"
-                className="w-full font-mono text-xs"
+                className="w-full text-xs"
               >
                 Activate Playoff #1
               </Button>
@@ -612,7 +612,7 @@ export const LeagueAdminPage = () => {
             className="flex w-full items-center justify-between"
             onClick={() => setPlayersOpen((o) => !o)}
           >
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-widest font-mono">
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-widest">
               Players
             </h2>
             <div className="flex items-center gap-2">
@@ -741,7 +741,7 @@ export const LeagueAdminPage = () => {
             className="flex w-full items-center justify-between"
             onClick={() => setTablesOpen((o) => !o)}
           >
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-widest font-mono">
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-widest">
               Tables
             </h2>
             <div className="flex items-center gap-2">
@@ -767,7 +767,7 @@ export const LeagueAdminPage = () => {
               <TableBody>
                 {(leagueTablesList.data ?? []).map((t, idx) => (
                   <TableRow key={t.id}>
-                    <TableCell className="text-muted-foreground text-xs px-2 py-2 font-mono truncate max-w-[80px]">
+                    <TableCell className="text-muted-foreground text-xs px-2 py-2 truncate max-w-[80px]">
                       {idx + 1}
                     </TableCell>
                     <TableCell className="py-2">
