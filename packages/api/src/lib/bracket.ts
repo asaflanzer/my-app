@@ -36,32 +36,13 @@ function makeId(prefix: string, i: number) {
 // Standard single-elimination seeding: 1v8, 4v5, 2v7, 3v6 (for 8 players)
 // General: pair seeds so that if every favourite wins, the final is 1v2.
 function singleElimSeeding(size: number): Array<[number, number]> {
-  const pairs: Array<[number, number]> = [];
-  function seed(lo: number, hi: number) {
-    if (hi - lo === 1) {
-      pairs.push([lo, hi]);
-      return;
-    }
-    const mid = Math.floor((hi - lo + 1) / 2);
-    for (let i = 0; i < mid; i++) {
-      seed(lo + i, hi - i);
-    }
-  }
-  // Build bracket positions
-  const positions: number[] = new Array(size);
-  positions[0] = 1;
-  for (let i = 1; i < size; i++) {
-    positions[i] = size + 1 - positions[i - 1 - (i % 2 === 0 ? 0 : 1)];
-  }
-  // Simple approach: fold the seed list
   const seeds = Array.from({ length: size }, (_, i) => i + 1);
-  const paired: Array<[number, number]> = [];
   function fold(arr: number[]): Array<[number, number]> {
-    if (arr.length === 2) return [[arr[0], arr[1]]];
+    if (arr.length === 2) return [[arr[0]!, arr[1]!]];
     const half = arr.length / 2;
     const result: Array<[number, number]> = [];
     for (let i = 0; i < half; i++) {
-      result.push([arr[i], arr[arr.length - 1 - i]]);
+      result.push([arr[i]!, arr[arr.length - 1 - i]!]);
     }
     return result;
   }
@@ -99,8 +80,8 @@ export function generateBracket(
           id: makeId(idPrefix, matchNum),
           round: 1,
           matchNumber: matchNum,
-          participant1Id: participants[i].id,
-          participant2Id: participants[j].id,
+          participant1Id: participants[i]!.id,
+          participant2Id: participants[j]!.id,
           nextMatchId: null,
           isLosersBracket: false,
         });
@@ -123,8 +104,8 @@ export function generateBracket(
         id: makeId(idPrefix, i + 1),
         round: 1,
         matchNumber: i + 1,
-        participant1Id: shuffled[i * 2].id,
-        participant2Id: shuffled[i * 2 + 1].id,
+        participant1Id: shuffled[i * 2]!.id,
+        participant2Id: shuffled[i * 2 + 1]!.id,
         nextMatchId: null,
         isLosersBracket: false,
       });
@@ -143,7 +124,7 @@ export function generateBracket(
   // Round 1
   const round1Ids: string[] = [];
   for (let i = 0; i < seededPairs.length; i++) {
-    const [s1, s2] = seededPairs[i];
+    const [s1, s2] = seededPairs[i]!;
     const p1 = participants[s1 - 1] ?? null;
     const p2 = participants[s2 - 1] ?? null;
     const id = makeId(idPrefix, idCounter++);
@@ -180,7 +161,7 @@ export function generateBracket(
     // Wire nextMatchId for previous round
     for (let i = 0; i < prevRoundIds.length; i++) {
       const match = matches.find((m) => m.id === prevRoundIds[i]);
-      if (match) match.nextMatchId = currRoundIds[Math.floor(i / 2)];
+      if (match) match.nextMatchId = currRoundIds[Math.floor(i / 2)] ?? null;
     }
     prevRoundIds = currRoundIds;
   }
@@ -207,7 +188,7 @@ export function generateBracket(
       }
       for (let i = 0; i < losersPrevIds.length; i++) {
         const match = matches.find((m) => m.id === losersPrevIds[i]);
-        if (match) match.nextMatchId = currIds[Math.floor(i / 2)];
+        if (match) match.nextMatchId = currIds[Math.floor(i / 2)] ?? null;
       }
       losersPrevIds = currIds;
     }

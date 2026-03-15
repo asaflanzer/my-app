@@ -1,0 +1,17 @@
+FROM node:20-alpine
+
+RUN npm install -g pnpm@10.6.0
+
+WORKDIR /app
+
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json turbo.json ./
+COPY packages/ packages/
+COPY apps/server/ apps/server/
+
+RUN pnpm install --frozen-lockfile
+
+EXPOSE 3001
+
+WORKDIR /app/apps/server
+
+CMD ["node_modules/.bin/tsx", "src/index.ts"]

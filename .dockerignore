@@ -1,0 +1,8 @@
+node_modules
+**/node_modules
+**/.env
+**/dist
+.git
+apps/native
+apps/web
+apps/legg-web

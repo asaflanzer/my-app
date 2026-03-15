@@ -135,12 +135,14 @@ export const LeaguePage = () => {
   const [simPast7, setSimPast7] = useState(false);
   const [modal, setModal] = useState<string | null>(null); // tableId
   const [sv, setSv] = useState({ s1: 0, s2: 0 });
-  const [standingsOpen, setStandingsOpen] = useState(
-    () => { const v = sessionStorage.getItem("standings-open"); return v === null ? true : v === "true"; },
-  );
-  const [tablesOpen, setTablesOpen] = useState(
-    () => { const v = sessionStorage.getItem("tables-open"); return v === null ? true : v === "true"; },
-  );
+  const [standingsOpen, setStandingsOpen] = useState(() => {
+    const v = sessionStorage.getItem("standings-open");
+    return v === null ? true : v === "true";
+  });
+  const [tablesOpen, setTablesOpen] = useState(() => {
+    const v = sessionStorage.getItem("tables-open");
+    return v === null ? true : v === "true";
+  });
   const [is9ball, setIs9ball] = useState(false);
   const [optOutModal, setOptOutModal] = useState(false);
   const [standingsExpanded, setStandingsExpanded] = useState(false);
@@ -199,9 +201,9 @@ export const LeaguePage = () => {
 
   if (!session) return <Navigate to="/login" replace />;
 
-  const gp = (id: string) => players.find((p) => p.id === id);
-  const me = myMemberId ? gp(myMemberId) : undefined;
-  const myReady = me?.status === "ready";
+  const getPlayer = (id: string) => players.find((p) => p.id === id);
+  const myPlayer = myMemberId ? getPlayer(myMemberId) : undefined;
+  const myReady = myPlayer?.status === "ready";
   const readyList = players.filter((p) => p.status === "ready");
   const now = new Date();
   const isPast7 = simPast7 || now.getHours() >= 19;
@@ -405,8 +407,8 @@ export const LeaguePage = () => {
             {myActiveTable &&
               (() => {
                 const t = myActiveTable;
-                const p1 = t.player1Id ? gp(t.player1Id) : null;
-                const p2 = t.player2Id ? gp(t.player2Id) : null;
+                const p1 = t.player1Id ? getPlayer(t.player1Id) : null;
+                const p2 = t.player2Id ? getPlayer(t.player2Id) : null;
                 return (
                   <div className="bg-card border border-card-border rounded-xl px-[14px] py-[11px] my-4">
                     <div className="flex justify-between items-center mb-2">
@@ -730,8 +732,8 @@ export const LeaguePage = () => {
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {tables.map((t) => {
-                    const p1 = t.player1Id ? gp(t.player1Id) : null;
-                    const p2 = t.player2Id ? gp(t.player2Id) : null;
+                    const p1 = t.player1Id ? getPlayer(t.player1Id) : null;
+                    const p2 = t.player2Id ? getPlayer(t.player2Id) : null;
                     const isLive = t.status === "active";
                     const myTable =
                       (t.player1Id === myMemberId ||
@@ -821,8 +823,8 @@ export const LeaguePage = () => {
         (() => {
           const t = allTables.find((t) => t.id === modal);
           if (!t || !t.player1Id || !t.player2Id) return null;
-          const p1 = gp(t.player1Id),
-            p2 = gp(t.player2Id);
+          const p1 = getPlayer(t.player1Id),
+            p2 = getPlayer(t.player2Id);
           const valid = (sv.s1 === raceTo) !== (sv.s2 === raceTo);
           return (
             <div

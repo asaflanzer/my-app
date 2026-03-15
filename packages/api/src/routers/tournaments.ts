@@ -50,7 +50,7 @@ export const tournamentRouter = router({
   update: protectedProcedure
     .input(updateTournamentSchema)
     .mutation(async ({ ctx, input }) => {
-      const existing = await assertHost(ctx, input.id);
+      await assertHost(ctx, input.id);
 
       // Update tournament fields
       await ctx.db

@@ -12,14 +12,6 @@ export const auth = betterAuth({
       clientId: process.env["GOOGLE_CLIENT_ID"]!,
       clientSecret: process.env["GOOGLE_CLIENT_SECRET"]!,
     },
-    facebook: {
-      clientId: process.env["FACEBOOK_CLIENT_ID"]!,
-      clientSecret: process.env["FACEBOOK_CLIENT_SECRET"]!,
-    },
-    apple: {
-      clientId: process.env["APPLE_CLIENT_ID"]!,
-      clientSecret: process.env["APPLE_CLIENT_SECRET"]!,
-    },
   },
   session: {
     expiresIn: 60 * 60 * 24 * 30, // 30 days
@@ -34,6 +26,7 @@ export const auth = betterAuth({
     "http://localhost:5174",
     "http://localhost:5175",
     process.env["BETTER_AUTH_URL"] ?? "http://localhost:3001",
+    ...(process.env["FRONTEND_URL"] ? [process.env["FRONTEND_URL"]] : []),
   ],
 });
 
