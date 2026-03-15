@@ -111,7 +111,12 @@ export function generateBracket(
 
   if (format === "swiss") {
     // Generate round 1 random pairings; rest is results-driven
-    const shuffled = [...participants].sort(() => Math.random() - 0.5);
+    const arr = [...participants];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = crypto.getRandomValues(new Uint32Array(1))[0]! % (i + 1);
+      [arr[i], arr[j]] = [arr[j]!, arr[i]!];
+    }
+    const shuffled = arr;
     const ms: MatchSeed[] = [];
     for (let i = 0; i < Math.floor(shuffled.length / 2); i++) {
       ms.push({

@@ -20,12 +20,12 @@ export const OAuthButton = ({ provider, label, callbackURL = `${window.location.
     try {
       const result = await signIn.social({ provider, callbackURL });
       if (result?.error) {
-        console.error(`[${provider} sign-in error]`, result.error);
-        alert(`Sign-in failed: ${result.error.message ?? result.error.status}`);
+        if (import.meta.env.DEV) console.error(`[${provider} sign-in error]`, result.error);
+        alert("Sign-in failed. Please try again.");
       }
     } catch (err) {
-      console.error(`[${provider} sign-in exception]`, err);
-      alert(`Sign-in failed: ${err instanceof Error ? err.message : "Unknown error"}`);
+      if (import.meta.env.DEV) console.error(`[${provider} sign-in exception]`, err);
+      alert("Sign-in failed. Please try again.");
     }
   };
 

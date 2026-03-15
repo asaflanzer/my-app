@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useSession } from "@/lib/auth-client";
 import { trpc } from "@/lib/trpc";
-import { isAdmin } from "@/lib/admin";
 import { AppHeader } from "@/components/AppHeader";
 
 export const ChooseLeaguePage = () => {
@@ -16,6 +15,8 @@ export const ChooseLeaguePage = () => {
   const [showCreate, setShowCreate] = useState(false);
   const [name, setName] = useState("");
   const [selectedLeagueId, setSelectedLeagueId] = useState("");
+
+  const { data: me } = trpc.auth.me.useQuery(undefined, { enabled: !!session });
 
   const { data: leagues, isLoading: leaguesLoading } =
     trpc.league.list.useQuery(undefined, { enabled: !!session });
@@ -56,7 +57,7 @@ export const ChooseLeaguePage = () => {
     return <Navigate to="/login" replace />;
   }
 
-  const canCreateLeague = isAdmin(session.user.email);
+  const canCreateLeague = me?.isAdmin ?? false;
 
   return (
     <div className="flex min-h-screen flex-col bg-background">

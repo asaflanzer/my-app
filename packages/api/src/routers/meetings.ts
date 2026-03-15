@@ -4,9 +4,19 @@ import { leagues, leagueMembers, leagueTables, meetings, meetingPlayers, matchTa
 import { eq, and, sql, desc, inArray, asc, or } from "@my-app/db";
 import { TRPCError } from "@trpc/server";
 
-function nanoid() {
-  return Math.random().toString(36).slice(2, 11) + Date.now().toString(36);
+function secureShuffleArray<T>(array: T[]): T[] {
+  const arr = [...array];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = crypto.getRandomValues(new Uint32Array(1))[0]! % (i + 1);
+    [arr[i], arr[j]] = [arr[j]!, arr[i]!];
+  }
+  return arr;
 }
+
+function secureRandomElement<T>(array: T[]): T {
+  return array[crypto.getRandomValues(new Uint32Array(1))[0]! % array.length]!;
+}
+
 
 async function assertLeagueHost(
   ctx: { db: typeof import("@my-app/db").db; session: { user: { id: string } } },
@@ -97,7 +107,7 @@ export const meetingRouter = router({
         .where(eq(meetings.leagueId, input.leagueId));
       const meetingNumber = existingMeetings.length + 1;
 
-      const meetingId = nanoid();
+      const meetingId = crypto.randomUUID();
       const now = new Date();
 
       await ctx.db.insert(meetings).values({
@@ -120,7 +130,7 @@ export const meetingRouter = router({
       }
 
       const tableRows = configuredTables.map((lt) => ({
-        id: nanoid(),
+        id: crypto.randomUUID(),
         meetingId,
         tableNumber: lt.tableNumber,
         score1: 0,
@@ -211,7 +221,7 @@ export const meetingRouter = router({
       if (!existing) {
         // Create as ready
         await ctx.db.insert(meetingPlayers).values({
-          id: nanoid(),
+          id: crypto.randomUUID(),
           meetingId: input.meetingId,
           memberId: member.id,
           status: "ready",
@@ -259,7 +269,7 @@ export const meetingRouter = router({
       }
 
       // Shuffle ready players
-      const shuffled = [...readyPlayers].sort(() => Math.random() - 0.5);
+      const shuffled = secureShuffleArray(readyPlayers);
       const pairs: Array<[string, string]> = [];
       for (let i = 0; i + 1 < shuffled.length; i += 2) {
         pairs.push([shuffled[i]!.memberId, shuffled[i + 1]!.memberId]);
@@ -384,7 +394,7 @@ export const meetingRouter = router({
       // Insert matchHistory record
       if (meeting) {
         await ctx.db.insert(matchHistory).values({
-          id: nanoid(),
+          id: crypto.randomUUID(),
           leagueId: input.leagueId,
           meetingId: input.meetingId,
           meetingNumber: meeting.meetingNumber,
@@ -470,7 +480,7 @@ export const meetingRouter = router({
       }
 
       // Pick a random available player
-      const replacement = availablePlayers[Math.floor(Math.random() * availablePlayers.length)]!;
+      const replacement = secureRandomElement(availablePlayers);
 
       // Swap: replace member with replacement
       const isPlayer1 = myTable.player1Id === member.id;

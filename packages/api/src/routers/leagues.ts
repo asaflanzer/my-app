@@ -1,20 +1,8 @@
 import { z } from "zod";
-import { router, protectedProcedure } from "../trpc.js";
+import { router, protectedProcedure, adminProcedure } from "../trpc.js";
 import { leagues, leagueMembers, leagueTables, users } from "@my-app/db";
 import { eq, and, asc } from "@my-app/db";
 import { TRPCError } from "@trpc/server";
-
-function nanoid() {
-  return Math.random().toString(36).slice(2, 11) + Date.now().toString(36);
-}
-
-function isAdminEmail(email: string): boolean {
-  const adminEmails = (process.env["VITE_ADMIN_EMAILS"] ?? "")
-    .split(",")
-    .map((e) => e.trim().toLowerCase())
-    .filter(Boolean);
-  return adminEmails.includes(email.toLowerCase());
-}
 
 async function assertLeagueHost(
   ctx: {
@@ -35,7 +23,7 @@ async function assertLeagueHost(
 }
 
 export const leagueRouter = router({
-  create: protectedProcedure
+  create: adminProcedure
     .input(
       z.object({
         name: z.string().min(1),
@@ -54,14 +42,7 @@ export const leagueRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      if (!isAdminEmail(ctx.session.user.email)) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Only admins can create leagues or tournaments",
-        });
-      }
-
-      const leagueId = nanoid();
+      const leagueId = crypto.randomUUID();
       const now = new Date();
 
       await ctx.db.insert(leagues).values({
@@ -81,7 +62,7 @@ export const leagueRouter = router({
       // Seed 15 default tables (10–24)
       await ctx.db.insert(leagueTables).values(
         Array.from({ length: 15 }, (_, i) => ({
-          id: nanoid(),
+          id: crypto.randomUUID(),
           leagueId,
           tableNumber: i + 10,
         })),
@@ -207,7 +188,7 @@ export const leagueRouter = router({
 
       if (!user) {
         const now = new Date();
-        const newUserId = nanoid();
+        const newUserId = crypto.randomUUID();
         const name = input.email.split("@")[0] ?? input.email;
         await ctx.db.insert(users).values({
           id: newUserId,
@@ -244,7 +225,7 @@ export const leagueRouter = router({
         });
 
       await ctx.db.insert(leagueMembers).values({
-        id: nanoid(),
+        id: crypto.randomUUID(),
         leagueId: input.leagueId,
         userId: user.id,
         wins: 0,
@@ -351,7 +332,7 @@ export const leagueRouter = router({
         });
 
       await ctx.db.insert(leagueMembers).values({
-        id: nanoid(),
+        id: crypto.randomUUID(),
         leagueId: input.leagueId,
         userId,
         wins: 0,
@@ -385,7 +366,7 @@ export const leagueRouter = router({
 
       // Auto-seed 15 default tables (10–24) if none exist
       const rows = Array.from({ length: 15 }, (_, i) => ({
-        id: nanoid(),
+        id: crypto.randomUUID(),
         leagueId: input.leagueId,
         tableNumber: i + 10,
       }));
@@ -402,7 +383,7 @@ export const leagueRouter = router({
     .mutation(async ({ ctx, input }) => {
       await assertLeagueHost(ctx, input.leagueId);
       await ctx.db.insert(leagueTables).values({
-        id: nanoid(),
+        id: crypto.randomUUID(),
         leagueId: input.leagueId,
         tableNumber: input.tableNumber,
       });

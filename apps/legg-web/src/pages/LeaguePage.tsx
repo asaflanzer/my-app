@@ -20,7 +20,6 @@ import {
 } from "@/components/ui/breadcrumb";
 import { cn } from "@/lib/utils";
 import { useSession } from "@/lib/auth-client";
-import { isAdmin } from "@/lib/admin";
 import { useLeagueContext } from "@/contexts/LeagueContext";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -69,7 +68,8 @@ export const LeaguePage = () => {
   const navigate = useNavigate();
   const { leagueId } = useParams<{ leagueId: string }>();
   const { data: session, isPending: sessionPending } = useSession();
-  const userIsAdmin = isAdmin(session?.user.email);
+  const { data: me } = trpc.auth.me.useQuery(undefined, { enabled: !!session });
+  const userIsAdmin = me?.isAdmin ?? false;
   const { league, isLoading: leagueLoading, myMemberId } = useLeagueContext();
 
   const { data: activeMeeting, refetch: refetchMeeting } =
@@ -136,10 +136,10 @@ export const LeaguePage = () => {
   const [modal, setModal] = useState<string | null>(null); // tableId
   const [sv, setSv] = useState({ s1: 0, s2: 0 });
   const [standingsOpen, setStandingsOpen] = useState(
-    () => sessionStorage.getItem("standings-open") !== "false",
+    () => { const v = sessionStorage.getItem("standings-open"); return v === null ? true : v === "true"; },
   );
   const [tablesOpen, setTablesOpen] = useState(
-    () => sessionStorage.getItem("tables-open") !== "false",
+    () => { const v = sessionStorage.getItem("tables-open"); return v === null ? true : v === "true"; },
   );
   const [is9ball, setIs9ball] = useState(false);
   const [optOutModal, setOptOutModal] = useState(false);

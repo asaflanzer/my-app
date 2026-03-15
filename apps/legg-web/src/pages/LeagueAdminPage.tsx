@@ -710,6 +710,7 @@ export const LeagueAdminPage = () => {
                         <Input
                           placeholder="Email address"
                           type="email"
+                          maxLength={255}
                           value={newEmail}
                           onChange={(e) => setNewEmail(e.target.value)}
                           onKeyDown={(e) =>

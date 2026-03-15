@@ -34,9 +34,6 @@ const createTournamentSchema = z.object({
     .default([]),
 });
 
-function nanoid() {
-  return Math.random().toString(36).slice(2, 11) + Date.now().toString(36);
-}
 
 async function assertHost(ctx: { db: typeof import("@my-app/db").db; session: { user: { id: string } } }, tournamentId: string) {
   const [t] = await ctx.db.select().from(tournaments).where(eq(tournaments.id, tournamentId)).limit(1);
@@ -83,7 +80,7 @@ export const tournamentRouter = router({
       const useReal = input.participants.length > 0;
       const participantRows = useReal
         ? input.participants.map((p, i) => ({
-            id: nanoid(),
+            id: crypto.randomUUID(),
             tournamentId: input.id,
             userId: null,
             name: p.name,
@@ -95,7 +92,7 @@ export const tournamentRouter = router({
             input.maxParticipants ?? 8,
             input.requireTeams
           ).map((p) => ({
-            id: nanoid(),
+            id: crypto.randomUUID(),
             tournamentId: input.id,
             userId: null,
             name: p.name,
@@ -145,7 +142,7 @@ export const tournamentRouter = router({
     .input(createTournamentSchema)
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
-      const tournamentId = nanoid();
+      const tournamentId = crypto.randomUUID();
 
       await ctx.db.insert(tournaments).values({
         id: tournamentId,
@@ -164,13 +161,13 @@ export const tournamentRouter = router({
         startDate: new Date(input.startDate),
         isTentative: input.isTentative,
         requireCheckIn: input.requireCheckIn,
-        shareableSlug: input.registrationType === "sign_up_page" ? nanoid() : null,
+        shareableSlug: input.registrationType === "sign_up_page" ? crypto.randomUUID() : null,
       });
 
       const useReal = input.participants.length > 0;
       const participantRows = useReal
         ? input.participants.map((p, i) => ({
-            id: nanoid(),
+            id: crypto.randomUUID(),
             tournamentId,
             userId: null,
             name: p.name,
@@ -182,7 +179,7 @@ export const tournamentRouter = router({
             input.maxParticipants ?? 8,
             input.requireTeams
           ).map((p) => ({
-            id: nanoid(),
+            id: crypto.randomUUID(),
             tournamentId,
             userId: null,
             name: p.name,
@@ -355,7 +352,7 @@ export const tournamentRouter = router({
       }
 
       await ctx.db.insert(participants).values({
-        id: nanoid(),
+        id: crypto.randomUUID(),
         tournamentId: input.id,
         userId: ctx.session.user.id,
         name: input.name,
