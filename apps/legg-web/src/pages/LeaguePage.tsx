@@ -8,6 +8,7 @@ import {
   MinusIcon,
   PlusIcon,
   Tablet,
+  X,
 } from "lucide-react";
 import {
   Breadcrumb,
@@ -30,8 +31,14 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import nineBallUrl from "@/assets/9ball.svg";
-import eightBallUrl from "@/assets/8ball.svg";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 
 interface IScorePillProps {
   v: number;
@@ -137,6 +144,13 @@ export const LeaguePage = () => {
   const [is9ball, setIs9ball] = useState(false);
   const [optOutModal, setOptOutModal] = useState(false);
   const [standingsExpanded, setStandingsExpanded] = useState(false);
+  const [historyMemberId, setHistoryMemberId] = useState<string | null>(null);
+
+  const { data: playerHistory, isLoading: historyLoading } =
+    trpc.meeting.getPlayerHistory.useQuery(
+      { leagueId: leagueId ?? "", memberId: historyMemberId ?? "" },
+      { enabled: !!historyMemberId && !!leagueId },
+    );
 
   // Build enriched player list (members + meeting status)
   const players = useMemo(() => {
@@ -153,12 +167,27 @@ export const LeaguePage = () => {
       wins: m.wins,
       losses: m.losses,
       pts: m.pts,
+      games: m.games,
       disabled: m.disabled,
       status: statusMap.get(m.id) ?? ("available" as PlayerStatus),
     }));
   }, [league, activeMeeting]);
 
-  const tables = activeMeeting?.tables ?? [];
+  const allTables = activeMeeting?.tables ?? [];
+  // Only show idle and active tables; done tables just update the scoreboard
+  const tables = allTables.filter((t) => t.status !== "done");
+
+  // Group player history by meetingNumber — must be before early returns (Rules of Hooks)
+  const historyByMeeting = useMemo(() => {
+    if (!playerHistory) return [];
+    const map = new Map<number, typeof playerHistory>();
+    for (const match of playerHistory) {
+      const group = map.get(match.meetingNumber) ?? [];
+      group.push(match);
+      map.set(match.meetingNumber, group);
+    }
+    return [...map.entries()].sort((a, b) => b[0] - a[0]);
+  }, [playerHistory]);
 
   if (sessionPending || leagueLoading) {
     return (
@@ -218,7 +247,7 @@ export const LeaguePage = () => {
     ];
   })();
 
-  const myActiveTable = tables.find(
+  const myActiveTable = allTables.find(
     (t) =>
       (t.player1Id === myMemberId || t.player2Id === myMemberId) &&
       t.status === "active",
@@ -243,7 +272,7 @@ export const LeaguePage = () => {
   };
 
   const openModal = (tableId: string) => {
-    const t = tables.find((t) => t.id === tableId);
+    const t = allTables.find((t) => t.id === tableId);
     if (!t) return;
     setSv({ s1: t.score1, s2: t.score2 });
     setModal(tableId);
@@ -268,6 +297,10 @@ export const LeaguePage = () => {
     if (!activeMeeting || !leagueId) return;
     shufflePlayer.mutate({ leagueId, meetingId: activeMeeting.id });
   };
+
+  const historyPlayer = historyMemberId
+    ? players.find((p) => p.id === historyMemberId)
+    : null;
 
   return (
     <div className="w-full sm:max-w-sm sm:mx-auto text-foreground pb-16">
@@ -335,7 +368,7 @@ export const LeaguePage = () => {
               <div className="bg-card border border-border rounded-[10px] px-[13px] py-[10px] mb-[13px] text-xs">
                 <div className="text-primary mb-[7px]">
                   ✋ Ready —{" "}
-                  {readyList.map((p) => p.name.split(" ")[0]).join(" · ")}
+                  {readyList.map((p) => p.name?.split(" ")[0]).join(" · ")}
                 </div>
                 <div className="flex gap-2 flex-wrap">
                   {!isPast7 && (
@@ -553,11 +586,12 @@ export const LeaguePage = () => {
           </CollapsibleTrigger>
           <CollapsibleContent>
             <div className="bg-card border border-card-border rounded-xl overflow-hidden">
-              <div className="grid grid-cols-[22px_1fr_28px_28px_36px] px-3 py-[7px] border-b border-muted text-[10px] text-table-header uppercase tracking-[.8px]">
+              <div className="grid grid-cols-[22px_1fr_28px_28px_28px_36px] px-3 py-[7px] border-b border-muted text-[10px] text-table-header uppercase tracking-[.8px]">
                 <span>#</span>
                 <span>Player</span>
                 <span className="text-center">W</span>
                 <span className="text-center">L</span>
+                <span className="text-center">GAMES</span>
                 <span className="text-right">Pts</span>
               </div>
               {visibleRows.length === 0 && (
@@ -604,7 +638,7 @@ export const LeaguePage = () => {
                   <div
                     key={p.id}
                     className={cn(
-                      "grid grid-cols-[22px_1fr_28px_28px_36px] px-3 py-[9px] items-center",
+                      "grid grid-cols-[22px_1fr_28px_28px_28px_36px] px-3 py-[9px] items-center",
                       "border-b border-muted last:border-b-0",
                       isMe && "bg-me-row",
                     )}
@@ -614,7 +648,7 @@ export const LeaguePage = () => {
                     </span>
                     <span
                       className={cn(
-                        "text-[13px]",
+                        "text-[13px] flex items-center gap-1",
                         isMe
                           ? "font-bold text-table-header"
                           : "font-normal text-foreground",
@@ -623,12 +657,26 @@ export const LeaguePage = () => {
                     >
                       {p.name}
                       {badge}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          (e.currentTarget as HTMLElement).blur();
+                          setHistoryMemberId(p.id);
+                        }}
+                        className="text-muted-foreground hover:text-primary transition-colors flex-shrink-0"
+                        aria-label={`View ${p.name} history`}
+                      >
+                        <Logs className="ml-1 w-3 h-3 text-foreground" />
+                      </button>
                     </span>
                     <span className="text-center text-emerald-500 text-[13px] font-semibold">
                       {p.wins}
                     </span>
                     <span className="text-center text-red-400 text-[13px] font-semibold">
                       {p.losses}
+                    </span>
+                    <span className="text-center text-foreground text-[13px] font-semibold">
+                      {p.games}
                     </span>
                     <span className="text-right text-secondary text-sm font-extrabold">
                       {p.pts}
@@ -675,108 +723,94 @@ export const LeaguePage = () => {
               />
             </CollapsibleTrigger>
             <CollapsibleContent>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {tables.map((t) => {
-                  const p1 = t.player1Id ? gp(t.player1Id) : null;
-                  const p2 = t.player2Id ? gp(t.player2Id) : null;
-                  const isLive = t.status === "active";
-                  const isDone = t.status === "done";
-                  const myTable =
-                    (t.player1Id === myMemberId ||
-                      t.player2Id === myMemberId) &&
-                    isLive;
+              {tables.length === 0 ? (
+                <div className="text-center text-muted-foreground text-sm py-4">
+                  No active tables right now.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {tables.map((t) => {
+                    const p1 = t.player1Id ? gp(t.player1Id) : null;
+                    const p2 = t.player2Id ? gp(t.player2Id) : null;
+                    const isLive = t.status === "active";
+                    const myTable =
+                      (t.player1Id === myMemberId ||
+                        t.player2Id === myMemberId) &&
+                      isLive;
 
-                  return (
-                    <div
-                      key={t.id}
-                      className={cn(
-                        "border rounded-[10px] px-[10px] pt-[9px] pb-2",
-                        myTable
-                          ? "bg-game-banner border-game-banner-border"
-                          : isDone
-                            ? "bg-card border-card-border"
+                    return (
+                      <div
+                        key={t.id}
+                        className={cn(
+                          "border rounded-[10px] px-[10px] pt-[9px] pb-2",
+                          myTable
+                            ? "bg-game-banner border-game-banner-border"
                             : "bg-card border-border",
-                      )}
-                    >
-                      <div className="flex justify-between items-center mb-1.5">
-                        <span
-                          className={cn(
-                            "text-[10px] font-bold tracking-[.4px]",
-                            myTable ? "text-primary" : "text-table-header",
-                          )}
-                        >
-                          TABLE {t.tableNumber}
-                        </span>
-                        {isLive && (
-                          <span className="text-[9px] font-bold text-secondary">
-                            ● LIVE
-                          </span>
                         )}
-                        {isDone && (
-                          <span className="text-[9px] font-bold text-primary">
-                            ✓ DONE
-                          </span>
-                        )}
-                        {!isLive && !isDone && (
-                          <span className="text-[9px] font-bold text-card-border">
-                            ● Idle
-                          </span>
-                        )}
-                      </div>
-
-                      {(
-                        [
-                          {
-                            player: p1,
-                            score: t.score1,
-                            won: t.score1 === raceTo && isDone,
-                          },
-                          {
-                            player: p2,
-                            score: t.score2,
-                            won: t.score2 === raceTo && isDone,
-                          },
-                        ] as const
-                      ).map(({ player, score, won }, pi) => (
-                        <div
-                          key={pi}
-                          className={cn(
-                            "flex justify-between items-center",
-                            pi === 0 && "mb-0.5",
-                          )}
-                        >
+                      >
+                        <div className="flex justify-between items-center mb-1.5">
                           <span
                             className={cn(
-                              "text-[12px] max-w-[60%] truncate",
-                              !player
-                                ? "text-foreground"
-                                : player.id === myMemberId
-                                  ? "text-me font-bold text-table-header"
-                                  : won
-                                    ? "text-foreground font-bold"
-                                    : "text-foreground",
+                              "text-[10px] font-bold tracking-[.4px]",
+                              myTable ? "text-primary" : "text-table-header",
                             )}
                           >
-                            {player ? player.name : "N/A"}
+                            TABLE {t.tableNumber}
                           </span>
-                          <span
+                          {isLive && (
+                            <span className="text-[9px] font-bold text-secondary">
+                              ● LIVE
+                            </span>
+                          )}
+                          {!isLive && (
+                            <span className="text-[9px] font-bold text-card-border">
+                              ● Idle
+                            </span>
+                          )}
+                        </div>
+
+                        {(
+                          [
+                            { player: p1, score: t.score1 },
+                            { player: p2, score: t.score2 },
+                          ] as const
+                        ).map(({ player, score }, pi) => (
+                          <div
+                            key={pi}
                             className={cn(
-                              "text-sm font-extrabold ml-1",
-                              won
-                                ? "text-secondary"
-                                : score > 0
+                              "flex justify-between items-center",
+                              pi === 0 && "mb-0.5",
+                            )}
+                          >
+                            <span
+                              className={cn(
+                                "text-[12px] max-w-[60%] truncate",
+                                !player
+                                  ? "text-foreground"
+                                  : player.id === myMemberId
+                                    ? "text-me font-bold text-table-header"
+                                    : "text-foreground",
+                              )}
+                            >
+                              {player ? player.name : "N/A"}
+                            </span>
+                            <span
+                              className={cn(
+                                "text-sm font-extrabold ml-1",
+                                score > 0
                                   ? "text-score-active"
                                   : "text-score-dim",
-                            )}
-                          >
-                            {score}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  );
-                })}
-              </div>
+                              )}
+                            >
+                              {score}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </CollapsibleContent>
           </Collapsible>
         )}
@@ -785,7 +819,7 @@ export const LeaguePage = () => {
       {/* SCORE MODAL */}
       {modal !== null &&
         (() => {
-          const t = tables.find((t) => t.id === modal);
+          const t = allTables.find((t) => t.id === modal);
           if (!t || !t.player1Id || !t.player2Id) return null;
           const p1 = gp(t.player1Id),
             p2 = gp(t.player2Id);
@@ -922,6 +956,109 @@ export const LeaguePage = () => {
             </div>
           );
         })()}
+
+      {/* PLAYER HISTORY DRAWER */}
+      <Drawer
+        open={!!historyMemberId}
+        onOpenChange={(open) => {
+          if (!open) setHistoryMemberId(null);
+        }}
+      >
+        <DrawerContent className="h-[100dvh] flex flex-col rounded-none">
+          <DrawerHeader>
+            <div className="flex flex-col gap-1 items-start border-b border-border pb-4">
+              <div className="w-full flex items-center justify-between">
+                <DrawerTitle className="text-base font-bold text-foreground">
+                  {historyPlayer?.name ?? "Player"}
+                </DrawerTitle>
+                <DrawerClose asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <X className="w-4 h-4" />
+                  </Button>
+                </DrawerClose>
+              </div>
+              <DrawerDescription className="text-xs text-muted-foreground">
+                Viewing player's match history
+              </DrawerDescription>
+            </div>
+          </DrawerHeader>
+          <div className="flex-1 overflow-y-auto px-5 py-4">
+            {historyLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="h-6 w-6 animate-spin rounded-full border-4 border-muted border-t-primary" />
+              </div>
+            ) : historyByMeeting.length === 0 ? (
+              <div className="text-center text-muted-foreground text-sm py-12">
+                No games played yet.
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {historyByMeeting.map(([meetingNumber, matches]) => (
+                  <div key={meetingNumber}>
+                    <h3 className="text-[11px] font-bold text-primary tracking-[1.5px] uppercase mb-2">
+                      Meeting #{meetingNumber}
+                    </h3>
+                    <div className="bg-card border border-card-border rounded-xl overflow-hidden">
+                      {matches.map((match, idx) => (
+                        <div
+                          key={match.id}
+                          className={cn(
+                            "flex items-center justify-between px-4 py-3",
+                            idx !== matches.length - 1 &&
+                              "border-b border-muted",
+                          )}
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span
+                              className={cn(
+                                "text-[10px] font-bold px-1.5 py-0.5 rounded",
+                                match.won
+                                  ? "bg-emerald-500/15 text-emerald-500"
+                                  : "bg-red-500/15 text-red-400",
+                              )}
+                            >
+                              {match.won ? "W" : "L"}
+                            </span>
+                            <span className="text-sm text-foreground truncate">
+                              vs {match.opponentName ?? "Unknown"}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1 flex-shrink-0 ml-2">
+                            <span
+                              className={cn(
+                                "text-sm font-bold",
+                                match.won
+                                  ? "text-emerald-500"
+                                  : "text-foreground",
+                              )}
+                            >
+                              {match.myScore}
+                            </span>
+                            <span className="text-muted-foreground text-xs">
+                              –
+                            </span>
+                            <span
+                              className={cn(
+                                "text-sm font-bold",
+                                !match.won ? "text-red-400" : "text-foreground",
+                              )}
+                            >
+                              {match.opponentScore}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground ml-1">
+                              T{match.tableNumber}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </DrawerContent>
+      </Drawer>
     </div>
   );
 };

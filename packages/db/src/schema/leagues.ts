@@ -30,6 +30,7 @@ export const leagueMembers = pgTable(
     wins: integer("wins").notNull().default(0),
     losses: integer("losses").notNull().default(0),
     pts: integer("pts").notNull().default(0),
+    games: integer("games").notNull().default(0),
     disabled: boolean("disabled").notNull().default(false),
     joinedAt: timestamp("joined_at").defaultNow().notNull(),
   },

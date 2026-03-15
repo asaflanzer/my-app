@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { router, protectedProcedure } from "../trpc.js";
-import { leagues, leagueMembers, leagueTables, meetings, meetingPlayers, matchTables } from "@my-app/db";
-import { eq, and, sql, desc, inArray, asc } from "@my-app/db";
+import { leagues, leagueMembers, leagueTables, meetings, meetingPlayers, matchTables, matchHistory, users } from "@my-app/db";
+import { eq, and, sql, desc, inArray, asc, or } from "@my-app/db";
 import { TRPCError } from "@trpc/server";
 
 function nanoid() {
@@ -39,6 +39,16 @@ async function getMembership(
     .limit(1);
   if (!member) throw new TRPCError({ code: "FORBIDDEN", message: "Not a league member" });
   return member;
+}
+
+async function assertLeagueMemberOrHost(
+  ctx: { db: typeof import("@my-app/db").db; session: { user: { id: string } } },
+  leagueId: string,
+) {
+  const [league] = await ctx.db.select().from(leagues).where(eq(leagues.id, leagueId)).limit(1);
+  if (!league) throw new TRPCError({ code: "NOT_FOUND" });
+  const isHost = league.hostId === ctx.session.user.id;
+  if (!isHost) await getMembership(ctx, leagueId);
 }
 
 export const meetingRouter = router({
@@ -338,29 +348,55 @@ export const meetingRouter = router({
       const loserId = score1 === input.raceTo ? table.player2Id : table.player1Id;
       const now = new Date();
 
+      // Get meeting info for matchHistory
+      const [meeting] = await ctx.db
+        .select({ meetingNumber: meetings.meetingNumber })
+        .from(meetings)
+        .where(eq(meetings.id, input.meetingId))
+        .limit(1);
+
       // Mark table as done
       await ctx.db
         .update(matchTables)
         .set({ status: "done", winnerId, updatedAt: now })
         .where(eq(matchTables.id, input.tableId));
 
-      // Update winner stats: +2 pts, +1 win
+      // Update winner stats: +2 pts, +1 win, +1 game
       await ctx.db
         .update(leagueMembers)
         .set({
           wins: sql`${leagueMembers.wins} + 1`,
           pts: sql`${leagueMembers.pts} + 2`,
+          games: sql`${leagueMembers.games} + 1`,
         })
         .where(eq(leagueMembers.id, winnerId));
 
-      // Update loser stats: +1 pt, +1 loss
+      // Update loser stats: +1 pt, +1 loss, +1 game
       await ctx.db
         .update(leagueMembers)
         .set({
           losses: sql`${leagueMembers.losses} + 1`,
           pts: sql`${leagueMembers.pts} + 1`,
+          games: sql`${leagueMembers.games} + 1`,
         })
         .where(eq(leagueMembers.id, loserId));
+
+      // Insert matchHistory record
+      if (meeting) {
+        await ctx.db.insert(matchHistory).values({
+          id: nanoid(),
+          leagueId: input.leagueId,
+          meetingId: input.meetingId,
+          meetingNumber: meeting.meetingNumber,
+          tableNumber: table.tableNumber,
+          player1Id: table.player1Id,
+          player2Id: table.player2Id,
+          score1,
+          score2,
+          winnerId,
+          createdAt: now,
+        });
+      }
 
       // Set both players back to "available"
       for (const memberId of [table.player1Id, table.player2Id]) {
@@ -459,5 +495,156 @@ export const meetingRouter = router({
         .update(meetingPlayers)
         .set({ status: "playing" })
         .where(eq(meetingPlayers.id, replacement.id));
+    }),
+
+  getMatchesByMeeting: protectedProcedure
+    .input(z.object({ leagueId: z.string(), meetingId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      await assertLeagueMemberOrHost(ctx, input.leagueId);
+
+      const rows = await ctx.db
+        .select({
+          id: matchHistory.id,
+          meetingNumber: matchHistory.meetingNumber,
+          tableNumber: matchHistory.tableNumber,
+          player1Id: matchHistory.player1Id,
+          player2Id: matchHistory.player2Id,
+          score1: matchHistory.score1,
+          score2: matchHistory.score2,
+          winnerId: matchHistory.winnerId,
+          createdAt: matchHistory.createdAt,
+        })
+        .from(matchHistory)
+        .where(eq(matchHistory.meetingId, input.meetingId))
+        .orderBy(asc(matchHistory.createdAt));
+
+      // Enrich with player names
+      const memberIds = [...new Set(
+        rows.flatMap((r) => [r.player1Id, r.player2Id, r.winnerId].filter(Boolean) as string[])
+      )];
+
+      let nameMap = new Map<string, string>();
+      if (memberIds.length > 0) {
+        const memberRows = await ctx.db
+          .select({ id: leagueMembers.id, name: users.name })
+          .from(leagueMembers)
+          .innerJoin(users, eq(leagueMembers.userId, users.id))
+          .where(inArray(leagueMembers.id, memberIds));
+        nameMap = new Map(memberRows.map((m) => [m.id, m.name ?? "Unknown"]));
+      }
+
+      return rows.map((r) => ({
+        ...r,
+        player1Name: r.player1Id ? (nameMap.get(r.player1Id) ?? "Unknown") : null,
+        player2Name: r.player2Id ? (nameMap.get(r.player2Id) ?? "Unknown") : null,
+        winnerName: r.winnerId ? (nameMap.get(r.winnerId) ?? "Unknown") : null,
+      }));
+    }),
+
+  getPlayerHistory: protectedProcedure
+    .input(z.object({ leagueId: z.string(), memberId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      await assertLeagueMemberOrHost(ctx, input.leagueId);
+
+      const rows = await ctx.db
+        .select({
+          id: matchHistory.id,
+          meetingNumber: matchHistory.meetingNumber,
+          tableNumber: matchHistory.tableNumber,
+          player1Id: matchHistory.player1Id,
+          player2Id: matchHistory.player2Id,
+          score1: matchHistory.score1,
+          score2: matchHistory.score2,
+          winnerId: matchHistory.winnerId,
+          createdAt: matchHistory.createdAt,
+        })
+        .from(matchHistory)
+        .where(
+          and(
+            eq(matchHistory.leagueId, input.leagueId),
+            or(
+              eq(matchHistory.player1Id, input.memberId),
+              eq(matchHistory.player2Id, input.memberId),
+            ),
+          ),
+        )
+        .orderBy(desc(matchHistory.createdAt));
+
+      // Get opponent names
+      const opponentIds = [...new Set(
+        rows.map((r) =>
+          r.player1Id === input.memberId ? r.player2Id : r.player1Id
+        ).filter(Boolean) as string[]
+      )];
+
+      let nameMap = new Map<string, string>();
+      if (opponentIds.length > 0) {
+        const memberRows = await ctx.db
+          .select({ id: leagueMembers.id, name: users.name })
+          .from(leagueMembers)
+          .innerJoin(users, eq(leagueMembers.userId, users.id))
+          .where(inArray(leagueMembers.id, opponentIds));
+        nameMap = new Map(memberRows.map((m) => [m.id, m.name ?? "Unknown"]));
+      }
+
+      return rows.map((r) => {
+        const isPlayer1 = r.player1Id === input.memberId;
+        const opponentId = isPlayer1 ? r.player2Id : r.player1Id;
+        const myScore = isPlayer1 ? r.score1 : r.score2;
+        const opponentScore = isPlayer1 ? r.score2 : r.score1;
+        return {
+          id: r.id,
+          meetingNumber: r.meetingNumber,
+          tableNumber: r.tableNumber,
+          opponentId,
+          opponentName: opponentId ? (nameMap.get(opponentId) ?? "Unknown") : null,
+          myScore,
+          opponentScore,
+          won: r.winnerId === input.memberId,
+          createdAt: r.createdAt,
+        };
+      });
+    }),
+
+  updateMatchRecord: protectedProcedure
+    .input(
+      z.object({
+        leagueId: z.string(),
+        matchId: z.string(),
+        player1Id: z.string().nullable().optional(),
+        player2Id: z.string().nullable().optional(),
+        score1: z.number().int().min(0).optional(),
+        score2: z.number().int().min(0).optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      await assertLeagueHost(ctx, input.leagueId);
+
+      const [record] = await ctx.db
+        .select()
+        .from(matchHistory)
+        .where(and(eq(matchHistory.id, input.matchId), eq(matchHistory.leagueId, input.leagueId)))
+        .limit(1);
+      if (!record) throw new TRPCError({ code: "NOT_FOUND" });
+
+      const updates: Partial<typeof matchHistory.$inferInsert> = {};
+      if (input.player1Id !== undefined) updates.player1Id = input.player1Id;
+      if (input.player2Id !== undefined) updates.player2Id = input.player2Id;
+      if (input.score1 !== undefined) updates.score1 = input.score1;
+      if (input.score2 !== undefined) updates.score2 = input.score2;
+
+      // Recalculate winnerId if scores changed
+      const newScore1 = input.score1 ?? record.score1;
+      const newScore2 = input.score2 ?? record.score2;
+      const newP1 = input.player1Id !== undefined ? input.player1Id : record.player1Id;
+      const newP2 = input.player2Id !== undefined ? input.player2Id : record.player2Id;
+      if (newScore1 !== newScore2) {
+        updates.winnerId = newScore1 > newScore2 ? newP1 : newP2;
+      }
+
+      await ctx.db
+        .update(matchHistory)
+        .set(updates)
+        .where(eq(matchHistory.id, input.matchId));
     }),
 });

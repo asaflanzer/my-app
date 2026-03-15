@@ -15,6 +15,7 @@ import { LeaguePage } from "@/pages/LeaguePage";
 import { LeagueAdminPage } from "@/pages/LeagueAdminPage";
 import { HomePage } from "@/pages/HomePage";
 import { ChooseLeaguePage } from "@/pages/ChooseLeaguePage";
+import { MeetingDetailPage } from "@/pages/MeetingDetailPage";
 import { AppHeader } from "@/components/AppHeader";
 import { Toaster } from "@/components/ui/sonner";
 import { LeagueProvider } from "@/contexts/LeagueContext";
@@ -78,6 +79,10 @@ export default function App() {
               }
             >
               <Route path="/league/:leagueId" element={<LeaguePage />} />
+              <Route
+                path="/league/:leagueId/meeting/:meetingId"
+                element={<MeetingDetailPage />}
+              />
               <Route element={<AdminRoute />}>
                 <Route
                   path="/league/:leagueId/admin"

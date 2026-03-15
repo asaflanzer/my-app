@@ -379,44 +379,42 @@ export const LeagueAdminPage = () => {
         {/* Section B: Meetings */}
         <section className="space-y-3">
           <div className="flex w-full items-center justify-between">
+            <div className="flex items-center gap-0">
+              <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-widest">
+                Meetings
+              </h2>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-muted-foreground hover:text-destructive ml-1"
+                onClick={() => leagueId && resetMeetings.mutate({ leagueId })}
+                disabled={resetMeetings.isPending}
+                aria-label="Testing:Reset meetings"
+              >
+                {resetMeetings.isPending ? (
+                  <Loader className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <RotateCcw className="h-3.5 w-3.5 text-amber-500" />
+                )}
+              </Button>
+            </div>
             <button
               type="button"
-              className="flex flex-1 items-center justify-between"
+              className="flex items-center gap-2 text-sm"
               onClick={() => setMeetingsOpen((o) => !o)}
             >
-              <div className="flex items-center gap-0">
-                <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-widest">
-                  Meetings
-                </h2>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 text-muted-foreground hover:text-destructive ml-1"
-                  onClick={() => leagueId && resetMeetings.mutate({ leagueId })}
-                  disabled={resetMeetings.isPending}
-                  aria-label="Testing:Reset meetings"
-                >
-                  {resetMeetings.isPending ? (
-                    <Loader className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <RotateCcw className="h-3.5 w-3.5 text-amber-500" />
-                  )}
-                </Button>
+              <div className="flex items-center gap-1">
+                <span className="text-2xl font-bold text-muted-foreground">
+                  {activatedMeetings}
+                </span>
+                <span className="text-muted-foreground">/</span>
+                <span className="font-bold">{league.regularMeetings}</span>
               </div>
-              <div className="flex items-center gap-2 text-sm">
-                <div className="flex items-center gap-1">
-                  <span className="text-2xl font-bold text-muted-foreground">
-                    {activatedMeetings}
-                  </span>
-                  <span className="text-muted-foreground">/</span>
-                  <span className="font-bold">{league.regularMeetings}</span>
-                </div>
-                {meetingsOpen ? (
-                  <ChevronUp className="h-4 w-4 text-muted-foreground" />
-                ) : (
-                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                )}
-              </div>
+              {meetingsOpen ? (
+                <ChevronUp className="h-4 w-4 text-muted-foreground" />
+              ) : (
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              )}
             </button>
           </div>
           {meetingsOpen && (
@@ -459,7 +457,12 @@ export const LeagueAdminPage = () => {
                             isCurrent
                               ? "font-semibold"
                               : "font-medium text-muted-foreground",
+                            meeting && "cursor-pointer hover:underline hover:text-foreground",
                           )}
+                          onClick={() =>
+                            meeting &&
+                            navigate(`/league/${leagueId}/meeting/${meeting.id}`)
+                          }
                         >
                           Meeting #{slot.meetingNumber}
                         </span>

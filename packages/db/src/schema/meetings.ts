@@ -43,9 +43,29 @@ export const matchTables = pgTable("match_tables", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const matchHistory = pgTable("match_history", {
+  id: text("id").primaryKey(),
+  leagueId: text("league_id")
+    .notNull()
+    .references(() => leagues.id, { onDelete: "cascade" }),
+  meetingId: text("meeting_id")
+    .notNull()
+    .references(() => meetings.id, { onDelete: "cascade" }),
+  meetingNumber: integer("meeting_number").notNull(),
+  tableNumber: integer("table_number").notNull(),
+  player1Id: text("player1_id").references(() => leagueMembers.id, { onDelete: "set null" }),
+  player2Id: text("player2_id").references(() => leagueMembers.id, { onDelete: "set null" }),
+  score1: integer("score1").notNull(),
+  score2: integer("score2").notNull(),
+  winnerId: text("winner_id").references(() => leagueMembers.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export type Meeting = typeof meetings.$inferSelect;
 export type NewMeeting = typeof meetings.$inferInsert;
 export type MeetingPlayer = typeof meetingPlayers.$inferSelect;
 export type NewMeetingPlayer = typeof meetingPlayers.$inferInsert;
 export type MatchTable = typeof matchTables.$inferSelect;
 export type NewMatchTable = typeof matchTables.$inferInsert;
+export type MatchHistory = typeof matchHistory.$inferSelect;
+export type NewMatchHistory = typeof matchHistory.$inferInsert;

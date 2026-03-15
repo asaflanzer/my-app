@@ -153,6 +153,7 @@ export const leagueRouter = router({
           wins: leagueMembers.wins,
           losses: leagueMembers.losses,
           pts: leagueMembers.pts,
+          games: leagueMembers.games,
           disabled: leagueMembers.disabled,
           joinedAt: leagueMembers.joinedAt,
           userName: users.name,
