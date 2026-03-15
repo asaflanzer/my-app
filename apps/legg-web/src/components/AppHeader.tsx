@@ -1,4 +1,4 @@
-import { Menu, User, Sun, Moon, LogOut, Trophy } from "lucide-react";
+import { Menu, Sun, Moon, LogOut, Trophy } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSession, signOut } from "@/lib/auth-client";
@@ -6,7 +6,6 @@ import { useTheme } from "@/lib/use-theme";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { Separator } from "@/components/ui/separator";
 import {
   Drawer,
   DrawerClose,

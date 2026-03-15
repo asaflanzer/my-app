@@ -33,7 +33,7 @@ export const ChooseLeaguePage = () => {
   const createLeague = trpc.league.create.useMutation({
     onSuccess: (data) => {
       toast("League created!");
-      navigate(`/leagues`);
+      navigate(`/league/${data.id}`);
     },
     onError: (e) => toast.error(e.message),
   });

@@ -6,7 +6,6 @@ import {
   ChevronDown,
   ChevronUp,
   Loader,
-  Minus,
   Pause,
   Pencil,
   Play,
@@ -457,11 +456,14 @@ export const LeagueAdminPage = () => {
                             isCurrent
                               ? "font-semibold"
                               : "font-medium text-muted-foreground",
-                            meeting && "cursor-pointer hover:underline hover:text-foreground",
+                            meeting &&
+                              "cursor-pointer hover:underline hover:text-foreground",
                           )}
                           onClick={() =>
                             meeting &&
-                            navigate(`/league/${leagueId}/meeting/${meeting.id}`)
+                            navigate(
+                              `/league/${leagueId}/meeting/${meeting.id}`,
+                            )
                           }
                         >
                           Meeting #{slot.meetingNumber}
