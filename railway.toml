@@ -2,6 +2,6 @@
 dockerfilePath = "Dockerfile.server"
 
 [deploy]
-releaseCommand = "cd /app && pnpm --filter @my-app/db db:migrate"
+releaseCommand = "cd /app && pnpm --filter @my-app/db db:push"
 healthcheckPath = "/health"
 healthcheckTimeout = 300
