@@ -23,18 +23,18 @@ export interface TournamentDraft {
   duration: "single_day" | "multi_day" | "recurring";
   format: TournamentFormat;
   hasSecondFormat: boolean;
-  secondFormat?: TournamentFormat;
+  secondFormat?: TournamentFormat | undefined;
   breakTies: boolean;
   // Step 3
   registrationType: "host_provided" | "sign_up_page";
   isFree: boolean;
   requireTeams: boolean;
   hasMaxParticipants: boolean;
-  maxParticipants?: number;
+  maxParticipants?: number | undefined;
   startDate: string;
   isTentative: boolean;
   requireCheckIn: boolean;
-  participants: Array<{ name: string; teamName?: string }>;
+  participants: Array<{ name: string; teamName?: string | undefined }>;
 }
 
 const INITIAL: TournamentDraft = {

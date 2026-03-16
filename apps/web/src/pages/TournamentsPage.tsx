@@ -99,7 +99,7 @@ interface TournamentCardProps {
     gameType: string;
     format: string;
     status: string;
-    startDate: Date;
+    startDate: Date | string;
     isFree: boolean;
   };
   onClick: () => void;
