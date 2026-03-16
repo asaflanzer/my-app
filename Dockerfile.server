@@ -15,7 +15,7 @@ RUN mkdir -p apps/web apps/native apps/legg-web && \
     echo '{"name":"native","version":"0.0.1","private":true}' > apps/native/package.json && \
     echo '{"name":"legg-web","version":"0.0.1","private":true}' > apps/legg-web/package.json
 
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --no-frozen-lockfile
 
 EXPOSE 3001
 
