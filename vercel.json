@@ -1,6 +1,6 @@
 {
-  "buildCommand": "pnpm turbo run build --filter=legg-web",
+  "buildCommand": "pnpm --filter legg-web build",
   "outputDirectory": "apps/legg-web/dist",
-  "installCommand": "pnpm install --frozen-lockfile",
+  "installCommand": "pnpm install --no-frozen-lockfile",
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }
