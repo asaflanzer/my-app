@@ -70,7 +70,7 @@ export const AppHeader = () => {
             <DrawerTitle className="text-primary text-2xl font-bold uppercase tracking-widest">
               Legg
             </DrawerTitle>
-            {session?.user.name && (
+            {session?.user?.name && (
               <p className="text-sm text-primary">
                 Welcome,{" "}
                 <span className="font-semibold text-primary">
