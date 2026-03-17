@@ -39,6 +39,7 @@ export const leagueRouter = router({
         regularMeetings: z.number().int().positive().default(7),
         playoffMeetings: z.number().int().positive().default(2),
         maxPlayers: z.number().int().positive().default(32),
+        isPublic: z.boolean().default(false),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -55,6 +56,7 @@ export const leagueRouter = router({
         regularMeetings: input.regularMeetings,
         playoffMeetings: input.playoffMeetings,
         maxPlayers: input.maxPlayers,
+        isPublic: input.isPublic,
         createdAt: now,
         updatedAt: now,
       });
@@ -162,6 +164,7 @@ export const leagueRouter = router({
         regularMeetings: z.number().int().positive().optional(),
         playoffMeetings: z.number().int().positive().optional(),
         maxPlayers: z.number().int().positive().optional(),
+        isPublic: z.boolean().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -294,7 +297,7 @@ export const leagueRouter = router({
 
     const all = await ctx.db.select().from(leagues);
     return all.filter(
-      (l) => l.hostId !== userId && !memberLeagueIds.has(l.id),
+      (l) => l.isPublic && l.hostId !== userId && !memberLeagueIds.has(l.id),
     );
   }),
 

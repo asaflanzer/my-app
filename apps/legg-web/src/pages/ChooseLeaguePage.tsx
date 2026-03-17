@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { useSession } from "@/lib/auth-client";
 import { trpc } from "@/lib/trpc";
 import { AppHeader } from "@/components/AppHeader";
@@ -14,6 +15,7 @@ export const ChooseLeaguePage = () => {
   const { data: session, isPending } = useSession();
   const [showCreate, setShowCreate] = useState(false);
   const [name, setName] = useState("");
+  const [isPublic, setIsPublic] = useState(false);
   const [selectedLeagueId, setSelectedLeagueId] = useState("");
 
   const { data: me } = trpc.auth.me.useQuery(undefined, { enabled: !!session });
@@ -145,6 +147,24 @@ export const ChooseLeaguePage = () => {
                     onChange={(e) => setName(e.target.value)}
                   />
                 </div>
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm">Publish</Label>
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      checked={isPublic}
+                      onCheckedChange={setIsPublic}
+                      aria-label="Public league"
+                    />
+                    <span className="text-xs text-muted-foreground">
+                      {isPublic ? "Public" : "Private"}
+                    </span>
+                  </div>
+                </div>
+                {!isPublic && (
+                  <p className="text-xs text-muted-foreground">
+                    You can publish it later via the admin page.
+                  </p>
+                )}
                 <div className="flex gap-2">
                   <Button
                     onClick={() => {
@@ -153,7 +173,7 @@ export const ChooseLeaguePage = () => {
                         .toLowerCase()
                         .replace(/[^a-z0-9]+/g, "-")
                         .replace(/^-|-$/g, "");
-                      createLeague.mutate({ name, slug });
+                      createLeague.mutate({ name, slug, isPublic });
                     }}
                     disabled={!name.trim() || createLeague.isPending}
                     className="flex-1"

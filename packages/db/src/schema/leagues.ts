@@ -13,6 +13,7 @@ export const leagues = pgTable("leagues", {
   regularMeetings: integer("regular_meetings").notNull().default(7),
   playoffMeetings: integer("playoff_meetings").notNull().default(2),
   maxPlayers: integer("max_players").notNull().default(32),
+  isPublic: boolean("is_public").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
