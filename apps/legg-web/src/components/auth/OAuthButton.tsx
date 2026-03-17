@@ -1,5 +1,4 @@
 import { Button } from "@/components/ui/button";
-import { signIn } from "@/lib/auth-client";
 
 type Provider = "google" | "facebook" | "apple";
 
@@ -16,17 +15,11 @@ const PROVIDER_ICONS: Record<Provider, string> = {
 };
 
 export const OAuthButton = ({ provider, label, callbackURL = `${window.location.origin}/` }: OAuthButtonProps) => {
-  const handleClick = async () => {
-    try {
-      const result = await signIn.social({ provider, callbackURL });
-      if (result?.error) {
-        if (import.meta.env.DEV) console.error(`[${provider} sign-in error]`, result.error);
-        alert("Sign-in failed. Please try again.");
-      }
-    } catch (err) {
-      if (import.meta.env.DEV) console.error(`[${provider} sign-in exception]`, err);
-      alert("Sign-in failed. Please try again.");
-    }
+  const handleClick = () => {
+    // Use full-page navigation instead of fetch so the browser treats the auth
+    // server as first-party — required for mobile Safari ITP cookie handling.
+    const apiUrl = import.meta.env["VITE_API_URL"] ?? "http://localhost:3001";
+    window.location.href = `${apiUrl}/api/auth/sign-in/social?provider=${provider}&callbackURL=${encodeURIComponent(callbackURL)}`;
   };
 
   return (
