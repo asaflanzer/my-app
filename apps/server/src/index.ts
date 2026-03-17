@@ -12,18 +12,24 @@ const app = new Hono();
 app.use("*", logger());
 
 // CORS — allow the Vite dev server and any configured origin
+// Normalize to strip trailing slashes so env var formatting doesn't matter
+const normalizeOrigin = (url: string) => url.replace(/\/$/, "");
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:5174",
   "http://localhost:5175",
-  process.env["BETTER_AUTH_URL"] ?? "http://localhost:3001",
-  ...(process.env["FRONTEND_URL"] ? [process.env["FRONTEND_URL"]] : []),
+  normalizeOrigin(process.env["BETTER_AUTH_URL"] ?? "http://localhost:3001"),
+  ...(process.env["FRONTEND_URL"]
+    ? [normalizeOrigin(process.env["FRONTEND_URL"])]
+    : []),
 ];
+
+console.log("Allowed CORS origins:", allowedOrigins);
 
 app.use(
   "*",
   cors({
-    origin: allowedOrigins,
+    origin: (origin) => (allowedOrigins.includes(origin) ? origin : null),
     allowHeaders: ["Content-Type", "Authorization"],
     allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     credentials: true,
