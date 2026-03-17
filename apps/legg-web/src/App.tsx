@@ -4,6 +4,7 @@ import {
   BrowserRouter,
   Routes,
   Route,
+  Navigate,
   Outlet,
   useLocation,
 } from "react-router-dom";
@@ -90,6 +91,7 @@ export default function App() {
                 />
               </Route>
             </Route>
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
           <Toaster />
         </BrowserRouter>
