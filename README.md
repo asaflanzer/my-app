@@ -19,7 +19,7 @@ Full-stack monorepo with React (web) + Expo (native), PostgreSQL, OAuth (Google 
 
 ### Prerequisites
 
-- Node.js >= 20
+- Node.js 24 (`nvm use` to switch automatically)
 - pnpm >= 10
 - PostgreSQL (or use Docker: `docker compose -f infra/docker-compose.yml up -d`)
 
