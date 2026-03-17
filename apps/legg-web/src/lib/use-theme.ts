@@ -5,11 +5,8 @@ type Theme = "light" | "dark";
 const STORAGE_KEY = "legg-theme";
 
 function getInitialTheme(): Theme {
-  const stored = localStorage.getItem(STORAGE_KEY) as Theme | null;
-  if (stored === "light" || stored === "dark") return stored;
-  return window.matchMedia("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : "light";
+  // Read from the DOM class already applied by the inline script in index.html
+  return document.documentElement.classList.contains("dark") ? "dark" : "light";
 }
 
 function applyTheme(theme: Theme) {
@@ -17,11 +14,7 @@ function applyTheme(theme: Theme) {
 }
 
 export function useTheme() {
-  const [theme, setTheme] = useState<Theme>(() => {
-    const t = getInitialTheme();
-    applyTheme(t);
-    return t;
-  });
+  const [theme, setTheme] = useState<Theme>(getInitialTheme);
 
   useEffect(() => {
     applyTheme(theme);

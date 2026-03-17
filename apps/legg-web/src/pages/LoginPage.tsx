@@ -29,7 +29,7 @@ export const LoginPage = () => {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#0a0a0a] p-4">
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-md bg-card border-card-border">
         <CardHeader className="space-y-1 text-center">
           <CardTitle className="text-3xl font-bold">Welcome back</CardTitle>
           <CardDescription>Sign in to your account to continue</CardDescription>
