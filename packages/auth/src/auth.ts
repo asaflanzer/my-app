@@ -28,6 +28,15 @@ export const auth = betterAuth({
     process.env["BETTER_AUTH_URL"] ?? "http://localhost:3001",
     ...(process.env["FRONTEND_URL"] ? [process.env["FRONTEND_URL"]] : []),
   ],
+  advanced: {
+    // Cross-origin setup (Vercel frontend → Railway backend):
+    // cookies must be SameSite=None;Secure so the browser stores them
+    // from cross-origin fetch responses and sends them on the OAuth callback.
+    // Fall back to Lax in local dev (no FRONTEND_URL set, plain HTTP).
+    defaultCookieAttributes: process.env["FRONTEND_URL"]
+      ? { sameSite: "none", secure: true }
+      : {},
+  },
 });
 
 export type Auth = typeof auth;
