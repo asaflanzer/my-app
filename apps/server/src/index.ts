@@ -36,6 +36,16 @@ app.use(
   }),
 );
 
+// Disable caching for all API/tRPC routes so Vercel edge and browsers never serve stale responses
+app.use("/api/*", async (c, next) => {
+  await next();
+  c.header("Cache-Control", "no-store");
+});
+app.use("/trpc/*", async (c, next) => {
+  await next();
+  c.header("Cache-Control", "no-store");
+});
+
 // Better Auth — handles all /api * routes (OAuth redirects, callbacks, sessions)
 app.on(["GET", "POST"], "/api/auth/**", (c) => auth.handler(c.req.raw));
 
