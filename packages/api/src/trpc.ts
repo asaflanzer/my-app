@@ -3,7 +3,7 @@ import { auth } from "@my-app/auth";
 import { db } from "@my-app/db";
 
 function isAdminEmail(email: string): boolean {
-  const adminEmails = (process.env["ADMIN_EMAILS"] ?? process.env["VITE_ADMIN_EMAILS"] ?? "")
+  const adminEmails = (process.env["ADMIN_EMAILS"] ?? "")
     .split(",")
     .map((e) => e.trim().toLowerCase())
     .filter(Boolean);
@@ -15,7 +15,9 @@ export const createContext = async ({ req }: { req: Request }) => {
     .getSession({ headers: req.headers })
     .catch(() => null);
 
-  const isAdmin = session?.user?.email ? isAdminEmail(session.user.email) : false;
+  const isAdmin = session?.user?.email
+    ? isAdminEmail(session.user.email)
+    : false;
 
   return { session, db, isAdmin };
 };
@@ -45,7 +47,10 @@ const isAdminMiddleware = middleware(({ ctx, next }) => {
     throw new TRPCError({ code: "UNAUTHORIZED" });
   }
   if (!ctx.isAdmin) {
-    throw new TRPCError({ code: "FORBIDDEN", message: "Only admins can perform this action" });
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "Only admins can perform this action",
+    });
   }
   return next({
     ctx: {

@@ -2,6 +2,7 @@ import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
+import type { MiddlewareHandler } from "hono";
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 import { auth } from "@my-app/auth";
 import { appRouter, createContext } from "@my-app/api";
@@ -36,15 +37,22 @@ app.use(
   }),
 );
 
-// Disable caching for all API/tRPC routes so Vercel edge and browsers never serve stale responses
-app.use("/api/*", async (c, next) => {
+// Disable caching for all API/tRPC routes — rebuilds the Response explicitly so the header
+// is guaranteed to apply even to raw Response objects from better-auth and tRPC handlers.
+const noCacheMiddleware: MiddlewareHandler = async (c, next) => {
   await next();
-  c.header("Cache-Control", "no-store");
-});
-app.use("/trpc/*", async (c, next) => {
-  await next();
-  c.header("Cache-Control", "no-store");
-});
+  if (c.res) {
+    const headers = new Headers(c.res.headers);
+    headers.set("Cache-Control", "no-store");
+    c.res = new Response(c.res.body, {
+      status: c.res.status,
+      statusText: c.res.statusText,
+      headers,
+    });
+  }
+};
+app.use("/api/*", noCacheMiddleware);
+app.use("/trpc/*", noCacheMiddleware);
 
 // Better Auth — handles all /api * routes (OAuth redirects, callbacks, sessions)
 app.on(["GET", "POST"], "/api/auth/**", (c) => auth.handler(c.req.raw));
