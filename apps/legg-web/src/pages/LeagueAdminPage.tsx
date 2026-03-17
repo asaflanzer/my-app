@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { format } from "date-fns";
+import { addDays, format } from "date-fns";
 import {
   CalendarIcon,
   Check,
@@ -493,7 +493,15 @@ export const LeagueAdminPage = () => {
                       <TableCell className="text-xs text-muted-foreground px-2 py-2 whitespace-nowrap">
                         {meeting?.createdAt
                           ? format(new Date(meeting.createdAt), "dd.MM.yyyy")
-                          : "—"}
+                          : league.startDate
+                            ? format(
+                                addDays(
+                                  new Date(league.startDate),
+                                  (slot.meetingNumber - 1) * 7,
+                                ),
+                                "dd.MM.yyyy",
+                              )
+                            : "—"}
                       </TableCell>
                       <TableCell className="text-center px-2 py-2">
                         <span
