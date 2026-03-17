@@ -1,12 +1,19 @@
 {
-  "rewrites": [
+  "routes": [
     {
-      "source": "/api/:path*",
-      "destination": "https://server-production-6135.up.railway.app/api/:path*"
+      "src": "/api/(.*)",
+      "dest": "https://server-production-6135.up.railway.app/api/$1"
     },
     {
-      "source": "/trpc/:path*",
-      "destination": "https://server-production-6135.up.railway.app/trpc/:path*"
+      "src": "/trpc/(.*)",
+      "dest": "https://server-production-6135.up.railway.app/trpc/$1"
+    },
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
     }
   ]
 }
