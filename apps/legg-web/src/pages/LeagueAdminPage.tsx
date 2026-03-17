@@ -45,6 +45,17 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const DatePicker = ({
   label,
@@ -66,12 +77,14 @@ const DatePicker = ({
           <Button
             variant="outline"
             className={cn(
-              "w-44 justify-start text-left font-normal",
+              "w-44 justify-start text-left font-normal overflow-hidden",
               !selected && "text-muted-foreground",
             )}
           >
-            <CalendarIcon className="mr-2 h-4 w-4" />
-            {selected ? format(selected, "PPP") : "Pick a date"}
+            <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
+            <span className="truncate">
+              {selected ? format(selected, "PPP") : "Pick a date"}
+            </span>
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start">
@@ -190,6 +203,14 @@ export const LeagueAdminPage = () => {
     onSuccess: () => {
       void utils.meeting.list.invalidate();
       toast("Meetings reset!");
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const deleteLeague = trpc.league.delete.useMutation({
+    onSuccess: () => {
+      toast("League deleted.");
+      navigate("/leagues");
     },
     onError: (e) => toast.error(e.message),
   });
@@ -862,6 +883,54 @@ export const LeagueAdminPage = () => {
               </TableBody>
             </Table>
           )}
+        </section>
+
+        <Separator />
+
+        {/* Danger Zone */}
+        <section className="space-y-3">
+          <h2 className="text-sm font-semibold text-destructive uppercase tracking-wider">
+            Danger Zone
+          </h2>
+          <div className="rounded-lg border border-destructive/30 p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium">Delete this league</p>
+                <p className="text-xs text-muted-foreground">
+                  Permanently delete the league and all its data.
+                </p>
+              </div>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" size="sm">
+                    Delete League
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete "{league.name}"?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will permanently delete the league and all its data —
+                      members, meetings, and match history. This action cannot
+                      be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() =>
+                        deleteLeague.mutate({ leagueId: league.id })
+                      }
+                      disabled={deleteLeague.isPending}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      {deleteLeague.isPending ? "Deleting..." : "Delete League"}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          </div>
         </section>
       </main>
 
