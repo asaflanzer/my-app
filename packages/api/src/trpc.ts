@@ -3,7 +3,7 @@ import { auth } from "@my-app/auth";
 import { db } from "@my-app/db";
 
 function isAdminEmail(email: string): boolean {
-  const adminEmails = (process.env["ADMIN_EMAILS"] ?? "")
+  const adminEmails = (process.env.ADMIN_EMAILS ?? "")
     .split(",")
     .map((e) => e.trim().toLowerCase())
     .filter(Boolean);

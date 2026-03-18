@@ -1,4 +1,0 @@
-{
-  "install": "npm install -g pnpm@10.6.0 && pnpm install --no-frozen-lockfile",
-  "start": "node_modules/.bin/tsx apps/server/src/index.ts"
-}
