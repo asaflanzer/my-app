@@ -2,5 +2,25 @@
   "buildCommand": "pnpm --filter legg-web build",
   "outputDirectory": "apps/legg-web/dist",
   "installCommand": "pnpm install --no-frozen-lockfile",
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [{ "key": "Cache-Control", "value": "no-store" }]
+    },
+    {
+      "source": "/trpc/(.*)",
+      "headers": [{ "key": "Cache-Control", "value": "no-store" }]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://server-production-e14c.up.railway.app/api/:path*"
+    },
+    {
+      "source": "/trpc/:path*",
+      "destination": "https://server-production-e14c.up.railway.app/trpc/:path*"
+    },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }
