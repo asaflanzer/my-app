@@ -50,7 +50,7 @@ const ScorePill = ({ v, active, winner, onPick }: IScorePillProps) => (
   <button
     onClick={onPick}
     className={cn(
-      "w-9 h-9 rounded-full text-sm font-bold cursor-pointer transition-opacity border-2",
+      "w-9 h-9 rounded-full text-sm font-bold cursor-pointer transition-opacity active:scale-90 active:opacity-70 border-2",
       active
         ? winner
           ? "border-secondary bg-secondary/15 text-secondary"
@@ -178,6 +178,28 @@ export const LeaguePage = () => {
   const allTables = activeMeeting?.tables ?? [];
   // Only show idle and active tables; done tables just update the scoreboard
   const tables = allTables.filter((t) => t.status !== "done");
+
+  const nextMeetingLabel = useMemo(() => {
+    if (!league?.startDate) return null;
+    const [h, m] = (league.startTime ?? "19:00").split(":").map(Number);
+    const meetingDow = new Date(league.startDate + "T00:00:00").getDay();
+    const now = new Date();
+    let daysUntil = (meetingDow - now.getDay() + 7) % 7;
+    if (daysUntil === 0) {
+      const meetingTime = new Date();
+      meetingTime.setHours(h!, m!, 0, 0);
+      daysUntil = now < meetingTime ? 0 : 7;
+    }
+    const next = new Date();
+    next.setDate(now.getDate() + daysUntil);
+    next.setHours(h!, m!, 0, 0);
+    const timeStr = next.toLocaleTimeString([], {
+      hour: "numeric",
+      minute: "2-digit",
+    });
+    if (daysUntil === 0) return `Tonight at ${timeStr}`;
+    return `${next.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" })} at ${timeStr}`;
+  }, [league?.startDate, league?.startTime]);
 
   // Group player history by meetingNumber — must be before early returns (Rules of Hooks)
   const historyByMeeting = useMemo(() => {
@@ -335,8 +357,18 @@ export const LeaguePage = () => {
       <div className="px-[13px] pt-[20px]">
         {!activeMeeting ? (
           <div className="text-center text-neutral-500 text-sm py-8">
-            No active meeting tonight. Check back later or ask the admin to
-            activate one.
+            No active meeting right now.
+            {nextMeetingLabel ? (
+              <>
+                Next meeting is on
+                <span className="font-medium text-foreground ml-1">
+                  {nextMeetingLabel}
+                </span>
+                .
+              </>
+            ) : (
+              <> Check back later or ask the admin to activate one.</>
+            )}
           </div>
         ) : activeMeeting.status === "idle" ? (
           <div className="text-center text-muted-foreground text-sm py-8 border border-border rounded-xl">
@@ -378,7 +410,7 @@ export const LeaguePage = () => {
                       onClick={() => setSimPast7(true)}
                       variant="ghost"
                       size="sm"
-                      className="bg-tinted-btn-bg border border-tinted-btn-border text-tinted-btn-text text-[11px] h-auto py-1 px-[10px] rounded-[10px]"
+                      className="bg-tinted-btn-bg border border-tinted-btn-border text-tinted-btn-text text-[11px] h-auto py-2 px-[10px] rounded-[10px]"
                     >
                       Simulate 7 PM
                     </Button>
@@ -389,7 +421,7 @@ export const LeaguePage = () => {
                       disabled={draw.isPending}
                       variant="secondary"
                       size="sm"
-                      className="text-[11px] h-auto py-1 px-3 rounded-[10px]"
+                      className="text-[11px] h-auto py-2 px-3 rounded-[10px]"
                     >
                       Draw Tables
                     </Button>
@@ -450,7 +482,7 @@ export const LeaguePage = () => {
                                 }
                                 variant="ghost"
                                 size="icon"
-                                className="w-10 h-10 rounded-full bg-tinted-btn-bg border border-tinted-btn-border text-tinted-btn-text text-xl"
+                                className="w-11 h-11 rounded-full bg-tinted-btn-bg border border-tinted-btn-border text-tinted-btn-text text-xl"
                               >
                                 <MinusIcon className="w-4 h-4" />
                               </Button>
@@ -460,7 +492,7 @@ export const LeaguePage = () => {
                                 }
                                 variant="ghost"
                                 size="icon"
-                                className="w-10 h-10 rounded-full bg-tinted-btn-bg border border-tinted-btn-border text-tinted-btn-text text-xl"
+                                className="w-11 h-11 rounded-full bg-tinted-btn-bg border border-tinted-btn-border text-tinted-btn-text text-xl"
                               >
                                 <PlusIcon className="w-4 h-4" />
                               </Button>
@@ -521,7 +553,7 @@ export const LeaguePage = () => {
                                 }
                                 variant="ghost"
                                 size="icon"
-                                className="w-10 h-10 rounded-full bg-tinted-btn-bg border border-tinted-btn-border text-tinted-btn-text text-xl"
+                                className="w-11 h-11 rounded-full bg-tinted-btn-bg border border-tinted-btn-border text-tinted-btn-text text-xl"
                               >
                                 <MinusIcon className="w-4 h-4" />
                               </Button>
@@ -531,7 +563,7 @@ export const LeaguePage = () => {
                                 }
                                 variant="ghost"
                                 size="icon"
-                                className="w-10 h-10 rounded-full bg-tinted-btn-bg border border-tinted-btn-border text-tinted-btn-text text-xl"
+                                className="w-11 h-11 rounded-full bg-tinted-btn-bg border border-tinted-btn-border text-tinted-btn-text text-xl"
                               >
                                 <PlusIcon className="w-4 h-4" />
                               </Button>
@@ -544,7 +576,7 @@ export const LeaguePage = () => {
                       <Button
                         onClick={() => openModal(t.id)}
                         variant="default"
-                        size="sm"
+                        size="default"
                       >
                         Submit Score
                       </Button>
@@ -554,7 +586,7 @@ export const LeaguePage = () => {
                           onClick={() => setOptOutModal(true)}
                           variant="link"
                           size="xs"
-                          className="p-0"
+                          className="px-2 py-1"
                         >
                           Opt out
                         </Button>
@@ -574,7 +606,7 @@ export const LeaguePage = () => {
           }}
           className="mb-6"
         >
-          <CollapsibleTrigger className="flex items-center justify-between w-full bg-transparent border-none cursor-pointer p-0 mt-4 mb-4">
+          <CollapsibleTrigger className="flex items-center justify-between w-full bg-transparent border-none cursor-pointer px-0 py-3">
             <h2 className="text-[11px] font-bold text-primary tracking-[1.5px] uppercase m-0 flex items-center">
               <Logs className="w-4 h-4 mr-2" /> Standings
             </h2>
@@ -607,7 +639,7 @@ export const LeaguePage = () => {
                     <div
                       key="hidden"
                       onClick={() => setStandingsExpanded(true)}
-                      className="bg-neutral-800 px-3 py-1 border-b border-muted cursor-pointer hover:bg-muted/30 transition-colors"
+                      className="bg-neutral-800 px-3 py-2 border-b border-muted cursor-pointer hover:bg-muted/30 active:bg-muted/50 transition-colors"
                     >
                       <div className="px-2 flex gap-2 items-center justify-center text-[10px] italic tracking-widest">
                         <Separator variant="secondary" type="dashed" />
@@ -665,7 +697,7 @@ export const LeaguePage = () => {
                           (e.currentTarget as HTMLElement).blur();
                           setHistoryMemberId(p.id);
                         }}
-                        className="text-muted-foreground hover:text-primary transition-colors flex-shrink-0"
+                        className="-m-2 p-2 text-muted-foreground hover:text-primary active:text-primary/70 transition-colors flex-shrink-0"
                         aria-label={`View ${p.name} history`}
                       >
                         <Logs className="ml-1 w-3 h-3 text-foreground" />
@@ -712,7 +744,7 @@ export const LeaguePage = () => {
             }}
             className="my-4"
           >
-            <CollapsibleTrigger className="flex items-center justify-between w-full bg-transparent border-none cursor-pointer p-0 mb-4">
+            <CollapsibleTrigger className="flex items-center justify-between w-full bg-transparent border-none cursor-pointer px-0 py-3">
               <h2 className="text-[11px] font-bold text-primary tracking-[1.5px] uppercase m-0 flex items-center">
                 <Tablet className="w-4 h-4 mr-2" /> Tables
               </h2>
@@ -950,7 +982,7 @@ export const LeaguePage = () => {
                 <Button
                   onClick={() => setOptOutModal(false)}
                   variant="ghost"
-                  className="w-full h-auto py-[10px] text-[13px]"
+                  className="w-full h-auto py-3 text-[13px]"
                 >
                   Cancel
                 </Button>
@@ -974,7 +1006,7 @@ export const LeaguePage = () => {
                   {historyPlayer?.name ?? "Player"}
                 </DrawerTitle>
                 <DrawerClose asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <Button variant="ghost" size="icon" className="h-10 w-10">
                     <X className="w-4 h-4" />
                   </Button>
                 </DrawerClose>
