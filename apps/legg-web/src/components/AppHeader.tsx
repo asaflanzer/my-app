@@ -125,14 +125,18 @@ export const AppHeader = () => {
         </DrawerContent>
       </Drawer>
       <div className="ml-auto flex items-center gap-2">
-        <Sun className="h-4 w-4 text-yellow-500" />
+        <Sun
+          className={`h-4 w-4 ${theme === "dark" ? "text-slate-400" : "text-yellow-500"}`}
+        />
         <Switch
           size="xs"
           checked={theme === "dark"}
           onCheckedChange={toggleTheme}
           aria-label="Toggle theme"
         />
-        <Moon className="h-4 w-4 text-slate-400" />
+        <Moon
+          className={`h-4 w-4 ${theme === "dark" ? "text-yellow-500" : "text-slate-400"}`}
+        />
       </div>
     </header>
   );
