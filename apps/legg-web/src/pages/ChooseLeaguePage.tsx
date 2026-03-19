@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
@@ -25,12 +25,6 @@ export const ChooseLeaguePage = () => {
 
   const { data: availableLeagues, isLoading: availableLoading } =
     trpc.league.listAvailable.useQuery(undefined, { enabled: !!session });
-
-  useEffect(() => {
-    if (availableLeagues && availableLeagues.length > 0 && !selectedLeagueId) {
-      setSelectedLeagueId(availableLeagues[0]!.id);
-    }
-  }, [availableLeagues, selectedLeagueId]);
 
   const createLeague = trpc.league.create.useMutation({
     onSuccess: (data) => {
@@ -96,12 +90,18 @@ export const ChooseLeaguePage = () => {
               <p className="text-sm text-muted-foreground uppercase tracking-widest text-center">
                 Join a League
               </p>
+              <p className="text-neutral-500 text-sm">
+                Choose a league from the list below.
+              </p>
               <div className="space-y-2">
                 <select
                   value={selectedLeagueId}
                   onChange={(e) => setSelectedLeagueId(e.target.value)}
                   className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
                 >
+                  <option value="" disabled>
+                    Select a league…
+                  </option>
                   {availableLeagues.map((league) => (
                     <option key={league.id} value={league.id}>
                       {league.name}
