@@ -128,7 +128,7 @@ export const AppHeader = () => {
         <Sun className="h-4 w-4 text-yellow-500" />
         <Switch
           size="xs"
-          checked={theme === "light"}
+          checked={theme === "dark"}
           onCheckedChange={toggleTheme}
           aria-label="Toggle theme"
         />
