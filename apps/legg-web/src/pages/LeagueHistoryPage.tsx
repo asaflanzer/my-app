@@ -1,6 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { useSession } from "@/lib/auth-client";
 import { trpc } from "@/lib/trpc";
 import {
   Breadcrumb,
@@ -20,8 +19,6 @@ import {
 
 export const LeagueHistoryPage = () => {
   const { leagueId } = useParams<{ leagueId: string }>();
-  const { data: session } = useSession();
-
   const { data: league } = trpc.league.getById.useQuery(
     { leagueId: leagueId! },
     { enabled: !!leagueId },
