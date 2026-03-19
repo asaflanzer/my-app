@@ -2,14 +2,6 @@ import { Link } from "react-router-dom";
 import { useSession } from "@/lib/auth-client";
 import { trpc } from "@/lib/trpc";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
   Breadcrumb,
   BreadcrumbItem,
   BreadcrumbList,
@@ -58,45 +50,38 @@ export const HistoryPage = () => {
         {leagues.length === 0 ? (
           <p className="text-sm text-muted-foreground">No leagues found.</p>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-6 px-2 text-xs">#</TableHead>
-                <TableHead className="text-xs">League</TableHead>
-                <TableHead className="text-xs">Status</TableHead>
-                <TableHead className="w-28 text-xs" />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {leagues.map((league, idx) => (
-                <TableRow key={league.id}>
-                  <TableCell className="text-muted-foreground text-xs px-2 py-2">
-                    {idx + 1}
-                  </TableCell>
-                  <TableCell className="py-2 text-[10px] truncate max-w-[180px] font-medium">
-                    {league.name}
-                  </TableCell>
-                  <TableCell className="py-2">
-                    <span
-                      className={`inline-block px-2 py-0.5 rounded whitespace-nowrap text-[10px] font-medium ${STATUS_STYLES[league.status] ?? ""}`}
-                    >
-                      {STATUS_LABEL[league.status] ?? league.status}
-                    </span>
-                  </TableCell>
-                  <TableCell className="py-2">
-                    <Button
-                      variant="link"
-                      size="sm"
-                      className="h-6 px-2 text-[10px]"
-                      asChild
-                    >
-                      <Link to={`/history/${league.id}`}>View matches</Link>
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <div className="divide-y divide-border">
+            {leagues.map((league, idx) => (
+              <div key={league.id} className="flex items-center gap-2 py-2.5">
+                <span className="text-xs text-muted-foreground w-5 shrink-0 text-right">
+                  #{idx + 1}
+                </span>
+                <span className="flex-1 text-xs font-medium truncate min-w-0">
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="shrink-0 h-7 px-2 text-xs"
+                    asChild
+                  >
+                    <Link to={`/league/${league.id}`}>{league.name}</Link>
+                  </Button>
+                </span>
+                <span
+                  className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium ${STATUS_STYLES[league.status] ?? ""}`}
+                >
+                  {STATUS_LABEL[league.status] ?? league.status}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="shrink-0 h-7 px-2 text-xs"
+                  asChild
+                >
+                  <Link to={`/history/${league.id}`}>View matches</Link>
+                </Button>
+              </div>
+            ))}
+          </div>
         )}
       </main>
     </div>
