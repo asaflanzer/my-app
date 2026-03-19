@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { parseISO, addDays, format, isToday } from "date-fns";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import {
@@ -179,27 +180,35 @@ export const LeaguePage = () => {
   // Only show idle and active tables; done tables just update the scoreboard
   const tables = allTables.filter((t) => t.status !== "done");
 
-  const nextMeetingLabel = useMemo(() => {
+  const nextMeeting = useMemo(() => {
     if (!league?.startDate) return null;
     const [h, m] = (league.startTime ?? "19:00").split(":").map(Number);
-    const meetingDow = new Date(league.startDate + "T00:00:00").getDay();
+    if (isNaN(h!) || isNaN(m!)) return null;
+    const startDateObj = parseISO(league.startDate);
+    if (isNaN(startDateObj.getTime())) return null;
+
     const now = new Date();
-    let daysUntil = (meetingDow - now.getDay() + 7) % 7;
-    if (daysUntil === 0) {
-      const meetingTime = new Date();
-      meetingTime.setHours(h!, m!, 0, 0);
-      daysUntil = now < meetingTime ? 0 : 7;
-    }
-    const next = new Date();
-    next.setDate(now.getDate() + daysUntil);
+    const daysAhead = (startDateObj.getDay() - now.getDay() + 7) % 7;
+    const next = addDays(now, daysAhead);
     next.setHours(h!, m!, 0, 0);
-    const timeStr = next.toLocaleTimeString([], {
-      hour: "numeric",
-      minute: "2-digit",
-    });
-    if (daysUntil === 0) return `Tonight at ${timeStr}`;
-    return `${next.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" })} at ${timeStr}`;
-  }, [league?.startDate, league?.startTime]);
+
+    // If today's meeting already passed, jump to next week
+    if (next <= now) next.setDate(next.getDate() + 7);
+
+    const timeStr = format(next, "HH:mm");
+    const label = isToday(next)
+      ? `Tonight at ${timeStr}`
+      : `${format(next, "EEE do, yyyy")} at ${timeStr}`;
+
+    const end = new Date(next);
+    end.setHours(end.getHours() + 2);
+    const calendarUrl =
+      `https://calendar.google.com/calendar/render?action=TEMPLATE` +
+      `&text=${encodeURIComponent(league.name + " - " + label)}` +
+      `&dates=${format(next, "yyyyMMdd'T'HHmmss")}/${format(end, "yyyyMMdd'T'HHmmss")}`;
+
+    return { label, calendarUrl };
+  }, [league?.startDate, league?.startTime, league?.name]);
 
   // Group player history by meetingNumber — must be before early returns (Rules of Hooks)
   const historyByMeeting = useMemo(() => {
@@ -356,20 +365,31 @@ export const LeaguePage = () => {
 
       <div className="px-[13px] pt-[20px]">
         {!activeMeeting ? (
-          <div className="text-center text-neutral-500 text-sm py-8">
-            No active meeting right now.
-            {nextMeetingLabel ? (
-              <>
-                Next meeting is on
-                <span className="font-medium text-foreground ml-1">
-                  {nextMeetingLabel}
-                </span>
-                .
-              </>
-            ) : (
-              <> Check back later or ask the admin to activate one.</>
-            )}
-          </div>
+          <>
+            <div className="text-center text-neutral-500 text-sm pt-8">
+              No active meeting right now.
+            </div>
+            <div className="text-center text-neutral-500 text-sm py-4">
+              {nextMeeting ? (
+                <>
+                  Next meeting is on
+                  <div className="font-medium text-foreground mt-0.5">
+                    {nextMeeting.label}
+                  </div>
+                  <a
+                    href={nextMeeting.calendarUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 mt-2 text-xs text-primary underline underline-offset-2"
+                  >
+                    Add to Google Calendar
+                  </a>
+                </>
+              ) : (
+                "Check back later or ask the admin to activate one."
+              )}
+            </div>
+          </>
         ) : activeMeeting.status === "idle" ? (
           <div className="text-center text-muted-foreground text-sm py-8 border border-border rounded-xl">
             Meeting #{activeMeeting.meetingNumber} is paused.
