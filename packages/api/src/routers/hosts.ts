@@ -55,6 +55,7 @@ export const hostsRouter = router({
           .insert(users)
           .values({ id: newUserId, name, email: input.email, emailVerified: false, createdAt: now, updatedAt: now })
           .returning();
+        if (!user) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create user" });
       }
 
       const [existing] = await ctx.db
