@@ -8,8 +8,8 @@ export const meetings = pgTable("meetings", {
     .notNull()
     .references(() => leagues.id, { onDelete: "cascade" }),
   meetingNumber: integer("meeting_number").notNull(),
-  status: text("status").notNull().default("active"), // 'active' | 'idle' | 'completed'
-  scheduledDate: timestamp("scheduled_date"),
+  status: text("status").notNull().default("inactive"), // 'inactive' | 'active' | 'paused' | 'done'
+  scheduledDate: timestamp("scheduled_date", { withTimezone: true }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

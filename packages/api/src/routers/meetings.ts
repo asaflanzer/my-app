@@ -69,6 +69,55 @@ export const meetingRouter = router({
       await ctx.db.delete(meetings).where(eq(meetings.leagueId, input.leagueId));
     }),
 
+  initialize: protectedProcedure
+    .input(z.object({ leagueId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const league = await assertLeagueHost(ctx, input.leagueId);
+
+      const existingMeetings = await ctx.db
+        .select()
+        .from(meetings)
+        .where(eq(meetings.leagueId, input.leagueId));
+
+      const hasStarted = existingMeetings.some((m) => m.status !== "inactive");
+      if (hasStarted)
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Cannot reinitialize after meetings have started" });
+
+      const regularCount = league.regularMeetings;
+      const existingByNumber = new Map(existingMeetings.map((m) => [m.meetingNumber, m]));
+
+      const calcDate = (num: number): Date | null =>
+        league.startDate
+          ? new Date(new Date(league.startDate).getTime() + (num - 1) * 7 * 24 * 60 * 60 * 1000)
+          : null;
+
+      // Delete excess meetings if regularMeetings was reduced
+      const toDelete = existingMeetings.filter((m) => m.meetingNumber > regularCount);
+      if (toDelete.length > 0)
+        await ctx.db.delete(meetings).where(inArray(meetings.id, toDelete.map((m) => m.id)));
+
+      // Update scheduled dates for existing meetings
+      for (const meeting of existingMeetings.filter((m) => m.meetingNumber <= regularCount))
+        await ctx.db.update(meetings).set({ scheduledDate: calcDate(meeting.meetingNumber) }).where(eq(meetings.id, meeting.id));
+
+      // Insert missing meeting slots
+      const toInsert = [];
+      const now = new Date();
+      for (let num = 1; num <= regularCount; num++) {
+        if (!existingByNumber.has(num))
+          toInsert.push({
+            id: crypto.randomUUID(),
+            leagueId: input.leagueId,
+            meetingNumber: num,
+            status: "inactive" as const,
+            scheduledDate: calcDate(num),
+            createdAt: now,
+          });
+      }
+      if (toInsert.length > 0)
+        await ctx.db.insert(meetings).values(toInsert);
+    }),
+
   list: protectedProcedure
     .input(z.object({ leagueId: z.string() }))
     .query(async ({ ctx, input }) => {
@@ -101,23 +150,28 @@ export const meetingRouter = router({
     .mutation(async ({ ctx, input }) => {
       await assertLeagueHost(ctx, input.leagueId);
 
-      // Count existing meetings for this league
-      const existingMeetings = await ctx.db
+      const allMeetings = await ctx.db
         .select()
         .from(meetings)
-        .where(eq(meetings.leagueId, input.leagueId));
-      const meetingNumber = existingMeetings.length + 1;
+        .where(eq(meetings.leagueId, input.leagueId))
+        .orderBy(asc(meetings.meetingNumber));
 
-      const meetingId = crypto.randomUUID();
-      const now = new Date();
+      // Find the first inactive meeting
+      const nextMeeting = allMeetings.find((m) => m.status === "inactive");
+      if (!nextMeeting)
+        throw new TRPCError({ code: "BAD_REQUEST", message: "No inactive meetings to activate. Use Continue/Update first." });
 
-      await ctx.db.insert(meetings).values({
-        id: meetingId,
-        leagueId: input.leagueId,
-        meetingNumber,
-        status: "active",
-        createdAt: now,
-      });
+      // Ensure all previous meetings are done
+      const previousMeetings = allMeetings.filter((m) => m.meetingNumber < nextMeeting.meetingNumber);
+      const allPrevDone = previousMeetings.every((m) => m.status === "done");
+      if (!allPrevDone)
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Previous meeting must be completed first" });
+
+      // Update status to active
+      await ctx.db
+        .update(meetings)
+        .set({ status: "active" })
+        .where(eq(meetings.id, nextMeeting.id));
 
       // Initialize match tables from configured league tables
       const configuredTables = await ctx.db
@@ -126,13 +180,13 @@ export const meetingRouter = router({
         .where(eq(leagueTables.leagueId, input.leagueId))
         .orderBy(asc(leagueTables.tableNumber));
 
-      if (configuredTables.length === 0) {
+      if (configuredTables.length === 0)
         throw new TRPCError({ code: "BAD_REQUEST", message: "No tables configured for this league" });
-      }
 
+      const now = new Date();
       const tableRows = configuredTables.map((lt) => ({
         id: crypto.randomUUID(),
-        meetingId,
+        meetingId: nextMeeting.id,
         tableNumber: lt.tableNumber,
         score1: 0,
         score2: 0,
@@ -142,7 +196,7 @@ export const meetingRouter = router({
       }));
       await ctx.db.insert(matchTables).values(tableRows);
 
-      return { meetingId, meetingNumber };
+      return { meetingId: nextMeeting.id, meetingNumber: nextMeeting.meetingNumber };
     }),
 
   getActive: protectedProcedure
@@ -153,7 +207,7 @@ export const meetingRouter = router({
       const [meeting] = await ctx.db
         .select()
         .from(meetings)
-        .where(and(eq(meetings.leagueId, input.leagueId), inArray(meetings.status, ["active", "idle"])))
+        .where(and(eq(meetings.leagueId, input.leagueId), inArray(meetings.status, ["active", "paused"])))
         .limit(1);
 
       if (!meeting) return null;
@@ -179,7 +233,7 @@ export const meetingRouter = router({
 
       await ctx.db
         .update(meetings)
-        .set({ status: "completed" })
+        .set({ status: "done" })
         .where(and(eq(meetings.id, input.meetingId), eq(meetings.leagueId, input.leagueId)));
     }),
 
@@ -194,10 +248,12 @@ export const meetingRouter = router({
         .where(eq(meetings.id, input.meetingId))
         .limit(1);
       if (!meeting) throw new TRPCError({ code: "NOT_FOUND" });
-      if (meeting.status === "completed")
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Meeting is already completed" });
+      if (meeting.status === "done")
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Meeting is already done" });
+      if (meeting.status === "inactive")
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Meeting has not started yet" });
 
-      const newStatus = meeting.status === "active" ? "idle" : "active";
+      const newStatus = meeting.status === "active" ? "paused" : "active";
       await ctx.db
         .update(meetings)
         .set({ status: newStatus })
@@ -216,7 +272,7 @@ export const meetingRouter = router({
         .where(and(eq(meetings.id, input.meetingId), eq(meetings.leagueId, input.leagueId)))
         .limit(1);
       if (!meeting) throw new TRPCError({ code: "NOT_FOUND" });
-      if (meeting.status === "completed")
+      if (meeting.status === "done")
         throw new TRPCError({ code: "BAD_REQUEST", message: "Cannot edit date of a completed meeting" });
       await ctx.db
         .update(meetings)

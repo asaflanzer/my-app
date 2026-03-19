@@ -120,6 +120,9 @@ export const LeagueAdminPage = () => {
     string | null
   >(null);
   const [editingDateValue, setEditingDateValue] = useState<string>("");
+  const [pendingDates, setPendingDates] = useState<Map<number, string>>(
+    new Map(),
+  );
 
   const utils = trpc.useUtils();
 
@@ -179,6 +182,14 @@ export const LeagueAdminPage = () => {
     { leagueId: leagueId! },
     { enabled: !!leagueId },
   );
+
+  const initializeMeetings = trpc.meeting.initialize.useMutation({
+    onSuccess: () => {
+      void utils.meeting.list.invalidate();
+      toast("Schedule saved!");
+    },
+    onError: (e) => toast.error(e.message),
+  });
 
   const activateMeeting = trpc.meeting.activate.useMutation({
     onSuccess: () => {
@@ -254,7 +265,7 @@ export const LeagueAdminPage = () => {
     },
   );
   const currentSlotIndex = allMeetingSlots.findIndex(
-    (s) => !s.data || s.data.status !== "completed",
+    (s) => !s.data || s.data.status !== "done",
   );
 
   const lastRegularMeeting =
@@ -262,7 +273,7 @@ export const LeagueAdminPage = () => {
   const allRegularMeetingsDone =
     activatedMeetings >= league.regularMeetings &&
     !!lastRegularMeeting &&
-    lastRegularMeeting.status !== "active";
+    lastRegularMeeting.status === "done";
   const canActivatePlayoff = allRegularMeetingsDone && activatedPlayoffs === 0;
 
   const handleAddPlayer = () => {
@@ -280,6 +291,45 @@ export const LeagueAdminPage = () => {
     const num = parseInt(editingTableNumber, 10);
     if (!editingTableId || isNaN(num) || num < 1 || !leagueId) return;
     updateTable.mutate({ leagueId, tableId: editingTableId, tableNumber: num });
+  };
+
+  const startEditDate = (
+    slot: { meetingNumber: number },
+    meeting: { id: string; scheduledDate: string | null; createdAt: string } | null,
+  ) => {
+    const editingId = meeting?.id ?? `slot-${slot.meetingNumber}`;
+    const dateStr = meeting?.scheduledDate
+      ? format(new Date(meeting.scheduledDate), "yyyy-MM-dd")
+      : (pendingDates.get(slot.meetingNumber) ??
+        (league.startDate
+          ? format(
+              addDays(new Date(league.startDate), (slot.meetingNumber - 1) * 7),
+              "yyyy-MM-dd",
+            )
+          : format(new Date(), "yyyy-MM-dd")));
+    setEditingDateValue(dateStr);
+    setEditingDateMeetingId(editingId);
+  };
+
+  const handleSaveDate = (
+    slot: { meetingNumber: number },
+    meeting: { id: string } | null,
+  ) => {
+    if (!editingDateValue) return;
+    if (meeting) {
+      updateMeetingDate.mutate({
+        leagueId: leagueId!,
+        meetingId: meeting.id,
+        scheduledDate: new Date(editingDateValue).toISOString(),
+      });
+    } else {
+      setPendingDates((prev) => {
+        const next = new Map(prev);
+        next.set(slot.meetingNumber, editingDateValue);
+        return next;
+      });
+    }
+    setEditingDateMeetingId(null);
   };
 
   const handleAddTable = () => {
@@ -401,6 +451,30 @@ export const LeagueAdminPage = () => {
               />
             </div>
           </div>
+          {(() => {
+            const hasAnyMeeting = (meetingList.data?.length ?? 0) > 0;
+            const hasStarted =
+              meetingList.data?.some((m) => m.status !== "inactive") ?? false;
+            if (hasStarted) return null;
+            return (
+              <div>
+                <Button
+                  onClick={() =>
+                    leagueId &&
+                    initializeMeetings.mutate({ leagueId })
+                  }
+                  disabled={
+                    initializeMeetings.isPending || !league.startDate
+                  }
+                >
+                  {initializeMeetings.isPending && (
+                    <Loader className="h-4 w-4 animate-spin mr-2" />
+                  )}
+                  {hasAnyMeeting ? "Update" : "Continue"}
+                </Button>
+              </div>
+            );
+          })()}
         </section>
 
         <Separator />
@@ -463,16 +537,19 @@ export const LeagueAdminPage = () => {
                   const isCurrent = idx === currentSlotIndex;
                   const meeting = slot.data;
                   const status = meeting?.status ?? null;
-                  const isCompleted = status === "completed";
-                  const isStarted = !!meeting;
+                  const isCompleted = status === "done";
+                  const isStarted = !!meeting && status !== "inactive";
 
-                  const statusLabel = !isStarted
-                    ? "—"
-                    : status === "active"
+                  const statusLabel =
+                    status === "active"
                       ? "Active"
-                      : status === "completed"
-                        ? "Done"
-                        : "Paused";
+                      : status === "paused"
+                        ? "Paused"
+                        : status === "done"
+                          ? "Done"
+                          : status === "inactive"
+                            ? "Scheduled"
+                            : "—";
 
                   return (
                     <TableRow
@@ -500,76 +577,77 @@ export const LeagueAdminPage = () => {
                         </span>
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground px-2 py-2 whitespace-nowrap">
-                        {editingDateMeetingId === meeting?.id ? (
-                          <input
-                            type="date"
-                            autoFocus
-                            value={editingDateValue}
-                            className="text-xs bg-background border border-input rounded px-1 py-0.5 w-32"
-                            onChange={(e) =>
-                              setEditingDateValue(e.target.value)
-                            }
-                            onBlur={() => {
-                              if (editingDateValue && meeting) {
-                                updateMeetingDate.mutate({
-                                  leagueId: leagueId!,
-                                  meetingId: meeting.id,
-                                  scheduledDate: new Date(
-                                    editingDateValue,
-                                  ).toISOString(),
-                                });
-                              }
-                              setEditingDateMeetingId(null);
-                            }}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") e.currentTarget.blur();
-                              if (e.key === "Escape")
-                                setEditingDateMeetingId(null);
-                            }}
-                          />
-                        ) : (
-                          <div className="flex items-center gap-1 group">
-                            <span>
-                              {meeting?.scheduledDate
-                                ? format(
-                                    new Date(meeting.scheduledDate),
-                                    "dd.MM.yyyy",
-                                  )
-                                : meeting?.createdAt
+                        {(() => {
+                          const editingId =
+                            meeting?.id ?? `slot-${slot.meetingNumber}`;
+                          return editingDateMeetingId === editingId ? (
+                            <div className="flex items-center gap-1">
+                              <input
+                                type="date"
+                                autoFocus
+                                value={editingDateValue}
+                                className="text-xs bg-background border border-input rounded px-1 py-0.5 w-32"
+                                onChange={(e) =>
+                                  setEditingDateValue(e.target.value)
+                                }
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter")
+                                    handleSaveDate(slot, meeting ?? null);
+                                  if (e.key === "Escape")
+                                    setEditingDateMeetingId(null);
+                                }}
+                              />
+                              <button
+                                type="button"
+                                className="text-muted-foreground hover:text-foreground"
+                                onClick={() =>
+                                  handleSaveDate(slot, meeting ?? null)
+                                }
+                                aria-label="Save date"
+                              >
+                                <Check className="h-3 w-3" />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-1 group">
+                              <span>
+                                {meeting?.scheduledDate
                                   ? format(
-                                      new Date(meeting.createdAt),
+                                      new Date(meeting.scheduledDate),
                                       "dd.MM.yyyy",
                                     )
-                                  : league.startDate
+                                  : pendingDates.get(slot.meetingNumber)
                                     ? format(
-                                        addDays(
-                                          new Date(league.startDate),
-                                          (slot.meetingNumber - 1) * 7,
+                                        new Date(
+                                          pendingDates.get(slot.meetingNumber)!,
                                         ),
                                         "dd.MM.yyyy",
                                       )
-                                    : "—"}
-                            </span>
-                            {isStarted && !isCompleted && (
-                              <button
-                                type="button"
-                                className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground"
-                                onClick={() => {
-                                  const displayDate = meeting.scheduledDate
-                                    ? new Date(meeting.scheduledDate)
-                                    : new Date(meeting.createdAt);
-                                  setEditingDateValue(
-                                    format(displayDate, "yyyy-MM-dd"),
-                                  );
-                                  setEditingDateMeetingId(meeting.id);
-                                }}
-                                aria-label="Edit meeting date"
-                              >
-                                <Pencil className="h-3 w-3" />
-                              </button>
-                            )}
-                          </div>
-                        )}
+                                    : league.startDate
+                                      ? format(
+                                          addDays(
+                                            new Date(league.startDate),
+                                            (slot.meetingNumber - 1) * 7,
+                                          ),
+                                          "dd.MM.yyyy",
+                                        )
+                                      : "—"}
+                              </span>
+                              {!isCompleted && (
+                                <button
+                                  type="button"
+                                  className="opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100 transition-opacity text-muted-foreground hover:text-foreground"
+                                  onClick={() =>
+                                    startEditDate(slot, meeting ?? null)
+                                  }
+                                  aria-label="Edit date"
+                                >
+                                  <Pencil className="h-3 w-3" />
+                                </button>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </TableCell>
                       <TableCell className="text-center px-2 py-2">
                         <span
@@ -586,7 +664,7 @@ export const LeagueAdminPage = () => {
                       <TableCell className="px-1 py-2">
                         {!isCompleted && (
                           <div className="flex items-center gap-0.5">
-                            {!isStarted ? (
+                            {status === "inactive" ? (
                               isCurrent && (
                                 <Button
                                   variant="ghost"
