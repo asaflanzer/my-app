@@ -86,6 +86,7 @@ export const meetingRouter = router({
           id: meetings.id,
           meetingNumber: meetings.meetingNumber,
           status: meetings.status,
+          scheduledDate: meetings.scheduledDate,
           createdAt: meetings.createdAt,
         })
         .from(meetings)
@@ -203,6 +204,24 @@ export const meetingRouter = router({
         .where(eq(meetings.id, input.meetingId));
 
       return { status: newStatus };
+    }),
+
+  updateDate: protectedProcedure
+    .input(z.object({ leagueId: z.string(), meetingId: z.string(), scheduledDate: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      await assertLeagueHost(ctx, input.leagueId);
+      const [meeting] = await ctx.db
+        .select()
+        .from(meetings)
+        .where(and(eq(meetings.id, input.meetingId), eq(meetings.leagueId, input.leagueId)))
+        .limit(1);
+      if (!meeting) throw new TRPCError({ code: "NOT_FOUND" });
+      if (meeting.status === "completed")
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Cannot edit date of a completed meeting" });
+      await ctx.db
+        .update(meetings)
+        .set({ scheduledDate: new Date(input.scheduledDate) })
+        .where(eq(meetings.id, input.meetingId));
     }),
 
   toggleReady: protectedProcedure

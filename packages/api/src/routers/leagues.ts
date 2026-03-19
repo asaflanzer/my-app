@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { router, protectedProcedure, adminProcedure } from "../trpc.js";
-import { leagues, leagueMembers, leagueTables, users } from "@my-app/db";
+import { leagues, leagueMembers, leagueTables, users, meetings } from "@my-app/db";
 import { eq, and, asc } from "@my-app/db";
 import { TRPCError } from "@trpc/server";
 
@@ -146,11 +146,18 @@ export const leagueRouter = router({
         .innerJoin(users, eq(leagueMembers.userId, users.id))
         .where(eq(leagueMembers.leagueId, league.id));
 
+      const firstMeeting = await ctx.db
+        .select({ id: meetings.id })
+        .from(meetings)
+        .where(eq(meetings.leagueId, league.id))
+        .limit(1);
+
       return {
         ...league,
         members,
         isAdmin: league.hostId === ctx.session.user.id,
         myMemberId: membership?.id,
+        hasStarted: firstMeeting.length > 0,
       };
     }),
 
@@ -346,6 +353,23 @@ export const leagueRouter = router({
       });
 
       return { leagueId: input.leagueId };
+    }),
+
+  leave: protectedProcedure
+    .input(z.object({ leagueId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const [member] = await ctx.db
+        .select()
+        .from(leagueMembers)
+        .where(
+          and(
+            eq(leagueMembers.leagueId, input.leagueId),
+            eq(leagueMembers.userId, ctx.session.user.id),
+          ),
+        )
+        .limit(1);
+      if (!member) throw new TRPCError({ code: "NOT_FOUND" });
+      await ctx.db.delete(leagueMembers).where(eq(leagueMembers.id, member.id));
     }),
 
   delete: protectedProcedure

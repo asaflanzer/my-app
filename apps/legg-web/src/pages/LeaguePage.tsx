@@ -133,6 +133,15 @@ export const LeaguePage = () => {
     onError: (e) => toast.error(e.message),
   });
 
+  const leaveLeague = trpc.league.leave.useMutation({
+    onSuccess: () => {
+      toast("You've left this league.");
+      navigate("/leagues");
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const [showLeaveDialog, setShowLeaveDialog] = useState(false);
   const [simPast7, setSimPast7] = useState(false);
   const [modal, setModal] = useState<string | null>(null); // tableId
   const [sv, setSv] = useState({ s1: 0, s2: 0 });
@@ -365,31 +374,60 @@ export const LeaguePage = () => {
 
       <div className="px-[13px] pt-[20px]">
         {!activeMeeting ? (
-          <>
-            <div className="text-center text-neutral-500 text-sm pt-8">
-              No active meeting right now.
-            </div>
-            <div className="text-center text-neutral-500 text-sm py-4">
-              {nextMeeting ? (
-                <>
-                  Next meeting is on
-                  <div className="font-medium text-foreground mt-0.5">
-                    {nextMeeting.label}
-                  </div>
-                  <a
-                    href={nextMeeting.calendarUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 mt-2 text-xs text-primary underline underline-offset-2"
-                  >
-                    Add to Google Calendar
-                  </a>
-                </>
-              ) : (
-                "Check back later or ask the admin to activate one."
+          !league?.hasStarted && myMemberId && !userIsAdmin ? (
+            <div className="text-center text-neutral-500 text-sm pt-8 space-y-3">
+              <div>
+                The next league starts on
+                <div className="font-medium text-foreground mt-0.5">
+                  {nextMeeting?.label ?? league?.startDate ?? "TBD"}
+                </div>
+              </div>
+              {nextMeeting && (
+                <a
+                  href={nextMeeting.calendarUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-xs text-primary underline underline-offset-2"
+                >
+                  Add to Google Calendar
+                </a>
               )}
+              <div>
+                <button
+                  onClick={() => setShowLeaveDialog(true)}
+                  className="text-xs text-rose-500 underline underline-offset-2"
+                >
+                  Opt out
+                </button>
+              </div>
             </div>
-          </>
+          ) : (
+            <>
+              <div className="text-center text-neutral-500 text-sm pt-8">
+                No active meeting right now.
+              </div>
+              <div className="text-center text-neutral-500 text-sm py-4">
+                {nextMeeting ? (
+                  <>
+                    Next meeting is on
+                    <div className="font-medium text-foreground mt-0.5">
+                      {nextMeeting.label}
+                    </div>
+                    <a
+                      href={nextMeeting.calendarUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 mt-2 text-xs text-primary underline underline-offset-2"
+                    >
+                      Add to Google Calendar
+                    </a>
+                  </>
+                ) : (
+                  "Check back later or ask the admin to activate one."
+                )}
+              </div>
+            </>
+          )
         ) : activeMeeting.status === "idle" ? (
           <div className="text-center text-muted-foreground text-sm py-8 border border-border rounded-xl">
             Meeting #{activeMeeting.meetingNumber} is paused.
@@ -1010,6 +1048,41 @@ export const LeaguePage = () => {
             </div>
           );
         })()}
+
+      {/* LEAVE LEAGUE DIALOG */}
+      {showLeaveDialog && (
+        <div
+          onClick={() => setShowLeaveDialog(false)}
+          className="fixed inset-0 bg-black/40 flex items-end z-[100]"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full sm:max-w-sm sm:mx-auto bg-background border border-card-border rounded-t-[18px] px-5 pt-[22px] pb-8"
+          >
+            <div className="text-center text-lg font-extrabold mb-2">
+              Leave League
+            </div>
+            <p className="text-sm text-muted-foreground text-center mb-6">
+              Are you sure you want to unregister from this league?
+            </p>
+            <Button
+              onClick={() => leagueId && leaveLeague.mutate({ leagueId })}
+              disabled={leaveLeague.isPending}
+              variant="destructive"
+              className="w-full mb-2"
+            >
+              {leaveLeague.isPending ? "Leaving…" : "Yes, leave league"}
+            </Button>
+            <Button
+              onClick={() => setShowLeaveDialog(false)}
+              variant="ghost"
+              className="w-full h-auto py-3 text-[13px]"
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* PLAYER HISTORY DRAWER */}
       <Drawer

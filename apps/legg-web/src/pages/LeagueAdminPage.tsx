@@ -116,6 +116,10 @@ export const LeagueAdminPage = () => {
     id: string;
     meetingNumber: number;
   } | null>(null);
+  const [editingDateMeetingId, setEditingDateMeetingId] = useState<
+    string | null
+  >(null);
+  const [editingDateValue, setEditingDateValue] = useState<string>("");
 
   const utils = trpc.useUtils();
 
@@ -204,6 +208,11 @@ export const LeagueAdminPage = () => {
       void utils.meeting.list.invalidate();
       toast("Meetings reset!");
     },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const updateMeetingDate = trpc.meeting.updateDate.useMutation({
+    onSuccess: () => void utils.meeting.list.invalidate(),
     onError: (e) => toast.error(e.message),
   });
 
@@ -491,17 +500,76 @@ export const LeagueAdminPage = () => {
                         </span>
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground px-2 py-2 whitespace-nowrap">
-                        {meeting?.createdAt
-                          ? format(new Date(meeting.createdAt), "dd.MM.yyyy")
-                          : league.startDate
-                            ? format(
-                                addDays(
-                                  new Date(league.startDate),
-                                  (slot.meetingNumber - 1) * 7,
-                                ),
-                                "dd.MM.yyyy",
-                              )
-                            : "—"}
+                        {editingDateMeetingId === meeting?.id ? (
+                          <input
+                            type="date"
+                            autoFocus
+                            value={editingDateValue}
+                            className="text-xs bg-background border border-input rounded px-1 py-0.5 w-32"
+                            onChange={(e) =>
+                              setEditingDateValue(e.target.value)
+                            }
+                            onBlur={() => {
+                              if (editingDateValue && meeting) {
+                                updateMeetingDate.mutate({
+                                  leagueId: leagueId!,
+                                  meetingId: meeting.id,
+                                  scheduledDate: new Date(
+                                    editingDateValue,
+                                  ).toISOString(),
+                                });
+                              }
+                              setEditingDateMeetingId(null);
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") e.currentTarget.blur();
+                              if (e.key === "Escape")
+                                setEditingDateMeetingId(null);
+                            }}
+                          />
+                        ) : (
+                          <div className="flex items-center gap-1 group">
+                            <span>
+                              {meeting?.scheduledDate
+                                ? format(
+                                    new Date(meeting.scheduledDate),
+                                    "dd.MM.yyyy",
+                                  )
+                                : meeting?.createdAt
+                                  ? format(
+                                      new Date(meeting.createdAt),
+                                      "dd.MM.yyyy",
+                                    )
+                                  : league.startDate
+                                    ? format(
+                                        addDays(
+                                          new Date(league.startDate),
+                                          (slot.meetingNumber - 1) * 7,
+                                        ),
+                                        "dd.MM.yyyy",
+                                      )
+                                    : "—"}
+                            </span>
+                            {isStarted && !isCompleted && (
+                              <button
+                                type="button"
+                                className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground"
+                                onClick={() => {
+                                  const displayDate = meeting.scheduledDate
+                                    ? new Date(meeting.scheduledDate)
+                                    : new Date(meeting.createdAt);
+                                  setEditingDateValue(
+                                    format(displayDate, "yyyy-MM-dd"),
+                                  );
+                                  setEditingDateMeetingId(meeting.id);
+                                }}
+                                aria-label="Edit meeting date"
+                              >
+                                <Pencil className="h-3 w-3" />
+                              </button>
+                            )}
+                          </div>
+                        )}
                       </TableCell>
                       <TableCell className="text-center px-2 py-2">
                         <span
