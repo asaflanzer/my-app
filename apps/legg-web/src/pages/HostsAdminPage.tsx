@@ -6,14 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
   Breadcrumb,
   BreadcrumbItem,
   BreadcrumbList,
@@ -129,105 +121,93 @@ export const HostsAdminPage = () => {
       <main className="px-4 py-6 space-y-4">
         <h1 className="text-2xl font-bold">Manage Hosts</h1>
 
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-6 px-2 text-xs">#</TableHead>
-              <TableHead className="text-xs">Host</TableHead>
-              <TableHead className="text-xs">Leagues</TableHead>
-              <TableHead className="w-12 text-xs text-center">
-                Enabled
-              </TableHead>
-              <TableHead className="w-8 px-1" />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {hosts.map((host, idx) => (
-              <TableRow key={host.id}>
-                <TableCell className="text-muted-foreground text-xs px-2 py-2">
-                  {idx + 1}
-                </TableCell>
-                <TableCell className="py-2">
-                  <div className="flex flex-col gap-0.5">
-                    <EditableName host={host} />
-                    <span className="text-[10px] text-neutral-500 leading-tight truncate max-w-[150px]">
-                      {host.email}
-                    </span>
-                  </div>
-                </TableCell>
-                <TableCell className="py-2">
-                  {host.leagues.length === 0 ? (
-                    <span className="text-xs text-muted-foreground">—</span>
-                  ) : (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 px-2 text-xs"
-                      onClick={() => setLeaguesDialogHost(host)}
-                    >
-                      View ({host.leagues.length})
-                    </Button>
-                  )}
-                </TableCell>
-                <TableCell className="py-2 text-center">
-                  <Switch
-                    checked={host.enabled}
-                    onCheckedChange={(enabled) =>
-                      toggleEnabled.mutate({ hostId: host.id, enabled })
-                    }
-                    aria-label={`${host.enabled ? "Disable" : "Enable"} ${host.name}`}
-                  />
-                </TableCell>
-                <TableCell className="px-1 py-2">
+        <div className="flex flex-col divide-y divide-border border rounded-lg overflow-hidden">
+          <div className="flex items-center gap-3 px-3 py-2 bg-muted/50 text-xs font-medium text-muted-foreground">
+            <span className="w-6 shrink-0">#</span>
+            <span className="flex-1">Host</span>
+            <span className="w-20 text-center">Leagues</span>
+            <span className="w-12 text-center">Enabled</span>
+            <span className="w-8" />
+          </div>
+
+          {hosts.map((host, idx) => (
+            <div key={host.id} className="flex items-center gap-3 px-3 py-3">
+              <span className="w-6 shrink-0 text-xs text-muted-foreground">{idx + 1}</span>
+              <div className="flex-1 flex flex-col gap-0.5 min-w-0">
+                <EditableName host={host} />
+                <span className="text-[10px] text-neutral-500 leading-tight truncate">
+                  {host.email}
+                </span>
+              </div>
+              <div className="w-20 flex justify-center">
+                {host.leagues.length === 0 ? (
+                  <span className="text-xs text-muted-foreground">—</span>
+                ) : (
                   <Button
                     variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                    onClick={() => revoke.mutate({ hostId: host.id })}
-                    aria-label={`Remove ${host.name}`}
+                    size="sm"
+                    className="h-6 px-2 text-xs"
+                    onClick={() => setLeaguesDialogHost(host)}
                   >
-                    <Trash2 className="h-3 w-3" />
+                    View ({host.leagues.length})
                   </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-            <TableRow>
-              <TableCell className="text-muted-foreground text-xs px-2 py-2">
-                {hosts.length + 1}
-              </TableCell>
-              <TableCell colSpan={4} className="py-2">
-                <div className="flex flex-col gap-1.5">
-                  <Input
-                    placeholder="Name"
-                    type="text"
-                    maxLength={100}
-                    value={newName}
-                    onChange={(e) => setNewName(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleAdd()}
-                    className="h-8 text-sm"
-                  />
-                  <Input
-                    placeholder="Email address"
-                    type="email"
-                    maxLength={255}
-                    value={newEmail}
-                    onChange={(e) => setNewEmail(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleAdd()}
-                    className="h-8 text-sm"
-                  />
-                  <Button
-                    className="w-full h-8"
-                    onClick={handleAdd}
-                    disabled={!newEmail.trim() || grant.isPending}
-                  >
-                    <Plus className="h-4 w-4 mr-1" />
-                    Add Host
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
+                )}
+              </div>
+              <div className="w-12 flex justify-center">
+                <Switch
+                  checked={host.enabled}
+                  onCheckedChange={(enabled) =>
+                    toggleEnabled.mutate({ hostId: host.id, enabled })
+                  }
+                  aria-label={`${host.enabled ? "Disable" : "Enable"} ${host.name}`}
+                />
+              </div>
+              <div className="w-8 flex justify-center">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                  onClick={() => revoke.mutate({ hostId: host.id })}
+                  aria-label={`Remove ${host.name}`}
+                >
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              </div>
+            </div>
+          ))}
+
+          <div className="flex items-start gap-3 px-3 py-3">
+            <span className="w-6 shrink-0 text-xs text-muted-foreground pt-2">{hosts.length + 1}</span>
+            <div className="flex-1 flex flex-col gap-1.5">
+              <Input
+                placeholder="Name"
+                type="text"
+                maxLength={100}
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+                className="h-8 text-sm"
+              />
+              <Input
+                placeholder="Email address"
+                type="email"
+                maxLength={255}
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+                className="h-8 text-sm"
+              />
+              <Button
+                className="w-full h-8"
+                onClick={handleAdd}
+                disabled={!newEmail.trim() || grant.isPending}
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Add Host
+              </Button>
+            </div>
+          </div>
+        </div>
       </main>
 
       <Dialog
