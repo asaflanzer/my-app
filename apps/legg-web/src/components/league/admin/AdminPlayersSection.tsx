@@ -20,6 +20,8 @@ export const AdminPlayersSection = () => {
   const { leagueId } = useParams<{ leagueId: string }>();
   const { league } = useLeagueContext();
   const {
+    newName,
+    setNewName,
     newEmail,
     setNewEmail,
     addMember,
@@ -129,26 +131,41 @@ export const AdminPlayersSection = () => {
                 {members.length + 1}
               </TableCell>
               <TableCell colSpan={3} className="py-2">
-                <div className="relative">
+                <div className="flex flex-col gap-1.5">
                   <Input
-                    placeholder="Email address"
-                    type="email"
-                    maxLength={255}
-                    value={newEmail}
-                    onChange={(e) => setNewEmail(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleAddPlayer()}
-                    className="h-8 text-sm pr-9"
+                    placeholder="Full name"
+                    type="text"
+                    maxLength={100}
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    className="h-8 text-sm"
                   />
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-0 top-0 h-8 w-8"
-                    onClick={handleAddPlayer}
-                    disabled={!newEmail.trim() || addMember.isPending}
-                    aria-label="Add player"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
+                  <div className="relative">
+                    <Input
+                      placeholder="Gmail address"
+                      type="email"
+                      maxLength={255}
+                      value={newEmail}
+                      onChange={(e) => setNewEmail(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleAddPlayer()}
+                      className="h-8 text-sm pr-9"
+                    />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-0 top-0 h-8 w-8"
+                      onClick={handleAddPlayer}
+                      disabled={
+                        !newName.trim() ||
+                        !newEmail.trim() ||
+                        !newEmail.toLowerCase().endsWith("@gmail.com") ||
+                        addMember.isPending
+                      }
+                      aria-label="Add player"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </TableCell>
             </TableRow>

@@ -1,4 +1,4 @@
-import { Menu, Sun, Moon, LogOut, Trophy, Users } from "lucide-react";
+import { Menu, Sun, Moon, LogOut, Trophy, Users, Shield, History } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSession, signOut } from "@/lib/auth-client";
@@ -41,6 +41,10 @@ export const AppHeader = () => {
   const { data: leagues } = trpc.league.list.useQuery(undefined, {
     enabled: !!session,
   });
+
+  const hostedLeagues = leagues?.filter(
+    (l) => l.hostId === session?.user?.id,
+  ) ?? [];
 
   const handleSignOut = async () => {
     await signOut({
@@ -110,6 +114,32 @@ export const AppHeader = () => {
               </div>
             )}
 
+            {session && (
+              <DrawerClose asChild>
+                <Button
+                  variant="ghost"
+                  className="justify-start gap-2 hover:bg-muted/50"
+                  onClick={() => navigate("/history")}
+                >
+                  <History className="h-4 w-4" />
+                  History
+                </Button>
+              </DrawerClose>
+            )}
+
+            {hostedLeagues.length > 0 && (
+              <DrawerClose asChild>
+                <Button
+                  variant="ghost"
+                  className="justify-start gap-2 hover:bg-muted/50"
+                  onClick={() => navigate("/my-leagues")}
+                >
+                  <Shield className="h-4 w-4" />
+                  My Leagues
+                </Button>
+              </DrawerClose>
+            )}
+
             {me?.isAdmin && (
               <DrawerClose asChild>
                 <Button
@@ -118,7 +148,7 @@ export const AppHeader = () => {
                   onClick={() => navigate("/admin/hosts")}
                 >
                   <Users className="h-4 w-4" />
-                  Hosts
+                  Manage Hosts
                 </Button>
               </DrawerClose>
             )}

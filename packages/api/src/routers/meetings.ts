@@ -732,4 +732,51 @@ export const meetingRouter = router({
         .set(updates)
         .where(eq(matchHistory.id, input.matchId));
     }),
+
+  getAllMatchHistory: protectedProcedure
+    .input(z.object({ leagueId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      await assertLeagueMemberOrHost(ctx, input.leagueId);
+
+      const rows = await ctx.db
+        .select({
+          id: matchHistory.id,
+          meetingId: matchHistory.meetingId,
+          meetingNumber: matchHistory.meetingNumber,
+          tableNumber: matchHistory.tableNumber,
+          player1Id: matchHistory.player1Id,
+          player2Id: matchHistory.player2Id,
+          score1: matchHistory.score1,
+          score2: matchHistory.score2,
+          winnerId: matchHistory.winnerId,
+          createdAt: matchHistory.createdAt,
+        })
+        .from(matchHistory)
+        .where(eq(matchHistory.leagueId, input.leagueId))
+        .orderBy(asc(matchHistory.meetingNumber), asc(matchHistory.tableNumber));
+
+      const memberIds = [
+        ...new Set(
+          rows
+            .flatMap((r) => [r.player1Id, r.player2Id])
+            .filter(Boolean) as string[],
+        ),
+      ];
+
+      let nameMap = new Map<string, string>();
+      if (memberIds.length > 0) {
+        const memberRows = await ctx.db
+          .select({ id: leagueMembers.id, name: users.name })
+          .from(leagueMembers)
+          .innerJoin(users, eq(leagueMembers.userId, users.id))
+          .where(inArray(leagueMembers.id, memberIds));
+        nameMap = new Map(memberRows.map((m) => [m.id, m.name ?? "Unknown"]));
+      }
+
+      return rows.map((r) => ({
+        ...r,
+        player1Name: r.player1Id ? (nameMap.get(r.player1Id) ?? "Unknown") : null,
+        player2Name: r.player2Id ? (nameMap.get(r.player2Id) ?? "Unknown") : null,
+      }));
+    }),
 });

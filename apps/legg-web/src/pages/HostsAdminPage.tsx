@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
+import { Link } from "react-router-dom";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +19,12 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
 } from "@/components/ui/breadcrumb";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface Host {
   id: string;
@@ -81,6 +88,7 @@ const EditableName = ({ host }: { host: Host }) => {
 export const HostsAdminPage = () => {
   const [newEmail, setNewEmail] = useState("");
   const [newName, setNewName] = useState("");
+  const [leaguesDialogHost, setLeaguesDialogHost] = useState<Host | null>(null);
 
   const { data: hosts = [], refetch } = trpc.hosts.list.useQuery();
 
@@ -112,7 +120,7 @@ export const HostsAdminPage = () => {
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>
-              <BreadcrumbPage>Hosts</BreadcrumbPage>
+              <BreadcrumbPage>Manage Hosts</BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
@@ -142,7 +150,7 @@ export const HostsAdminPage = () => {
                 <TableCell className="py-2">
                   <div className="flex flex-col gap-0.5">
                     <EditableName host={host} />
-                    <span className="text-xs text-neutral-500 leading-tight truncate max-w-[180px]">
+                    <span className="text-[10px] text-neutral-500 leading-tight truncate max-w-[150px]">
                       {host.email}
                     </span>
                   </div>
@@ -151,16 +159,14 @@ export const HostsAdminPage = () => {
                   {host.leagues.length === 0 ? (
                     <span className="text-xs text-muted-foreground">—</span>
                   ) : (
-                    <div className="flex flex-col gap-0.5">
-                      {host.leagues.map((l) => (
-                        <span
-                          key={l.id}
-                          className="text-xs text-neutral-500 leading-tight"
-                        >
-                          {l.name}
-                        </span>
-                      ))}
-                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2 text-xs"
+                      onClick={() => setLeaguesDialogHost(host)}
+                    >
+                      View ({host.leagues.length})
+                    </Button>
                   )}
                 </TableCell>
                 <TableCell className="py-2 text-center">
@@ -223,6 +229,29 @@ export const HostsAdminPage = () => {
           </TableBody>
         </Table>
       </main>
+
+      <Dialog
+        open={leaguesDialogHost !== null}
+        onOpenChange={(open) => !open && setLeaguesDialogHost(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{leaguesDialogHost?.name}'s Leagues</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-1 pt-2">
+            {leaguesDialogHost?.leagues.map((l) => (
+              <Link
+                key={l.id}
+                to={`/league/${l.id}`}
+                className="text-sm text-primary hover:underline py-1"
+                onClick={() => setLeaguesDialogHost(null)}
+              >
+                {l.name}
+              </Link>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

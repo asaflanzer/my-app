@@ -23,6 +23,9 @@ import { LeagueProvider } from "@/contexts/LeagueContext";
 import { AdminRoute } from "@/components/AdminRoute";
 import { AppAdminRoute } from "@/components/AppAdminRoute";
 import { HostsAdminPage } from "@/pages/HostsAdminPage";
+import { MyLeaguesPage } from "@/pages/MyLeaguesPage";
+import { HistoryPage } from "@/pages/HistoryPage";
+import { LeagueHistoryPage } from "@/pages/LeagueHistoryPage";
 
 const PageTransitionLoader = () => {
   const location = useLocation();
@@ -94,10 +97,14 @@ export default function App() {
               </Route>
             </Route>
             <Route element={<AppLayout />}>
+                <Route path="/my-leagues" element={<MyLeaguesPage />} />
+              <Route path="/history" element={<HistoryPage />} />
+              <Route path="/history/:leagueId" element={<LeagueHistoryPage />} />
               <Route element={<AppAdminRoute />}>
                 <Route path="/admin/hosts" element={<HostsAdminPage />} />
               </Route>
             </Route>
+            x
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
           <Toaster />

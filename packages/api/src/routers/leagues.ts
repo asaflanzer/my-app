@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { router, protectedProcedure } from "../trpc.js";
 import { leagues, leagueMembers, leagueTables, users, hosts, meetings } from "@my-app/db";
-import { eq, and, asc } from "@my-app/db";
+import { eq, and, asc, inArray } from "@my-app/db";
 import { TRPCError } from "@trpc/server";
 
 async function assertLeagueHost(
@@ -198,7 +198,18 @@ export const leagueRouter = router({
     }),
 
   addMember: protectedProcedure
-    .input(z.object({ leagueId: z.string(), email: z.string().email() }))
+    .input(
+      z.object({
+        leagueId: z.string(),
+        name: z.string().min(1),
+        email: z
+          .string()
+          .email()
+          .refine((e) => e.toLowerCase().endsWith("@gmail.com"), {
+            message: "Email must be a Gmail address",
+          }),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
       await assertLeagueHost(ctx, input.leagueId);
 
@@ -212,7 +223,7 @@ export const leagueRouter = router({
       if (!user) {
         const now = new Date();
         const newUserId = crypto.randomUUID();
-        const name = input.email.split("@")[0] ?? input.email;
+        const name = input.name;
         await ctx.db.insert(users).values({
           id: newUserId,
           name,
@@ -447,4 +458,58 @@ export const leagueRouter = router({
         .delete(leagueTables)
         .where(and(eq(leagueTables.id, input.tableId), eq(leagueTables.leagueId, input.leagueId)));
     }),
+
+  listWithStatus: protectedProcedure.query(async ({ ctx }) => {
+    const userId = ctx.session.user.id;
+
+    const memberRows = await ctx.db
+      .select({ league: leagues })
+      .from(leagueMembers)
+      .innerJoin(leagues, eq(leagueMembers.leagueId, leagues.id))
+      .where(eq(leagueMembers.userId, userId));
+
+    const hostedRows = await ctx.db
+      .select({ league: leagues })
+      .from(leagues)
+      .where(eq(leagues.hostId, userId));
+
+    const all = [
+      ...memberRows.map((r) => r.league),
+      ...hostedRows.map((r) => r.league),
+    ];
+    const seen = new Set<string>();
+    const userLeagues = all.filter((l) => {
+      if (seen.has(l.id)) return false;
+      seen.add(l.id);
+      return true;
+    });
+
+    if (userLeagues.length === 0) return [];
+
+    const leagueIds = userLeagues.map((l) => l.id);
+    const meetingRows = await ctx.db
+      .select({ leagueId: meetings.leagueId, status: meetings.status })
+      .from(meetings)
+      .where(inArray(meetings.leagueId, leagueIds));
+
+    const meetingsByLeague = new Map<string, string[]>();
+    for (const m of meetingRows) {
+      const list = meetingsByLeague.get(m.leagueId) ?? [];
+      list.push(m.status);
+      meetingsByLeague.set(m.leagueId, list);
+    }
+
+    return userLeagues.map((l) => {
+      const statuses = meetingsByLeague.get(l.id) ?? [];
+      let status: "active" | "done" | "not_started";
+      if (statuses.length === 0) {
+        status = "not_started";
+      } else {
+        const expected = l.regularMeetings + l.playoffMeetings;
+        const doneCount = statuses.filter((s) => s === "done").length;
+        status = doneCount >= expected ? "done" : "active";
+      }
+      return { ...l, status };
+    });
+  }),
 });

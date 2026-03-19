@@ -5,11 +5,13 @@ import { trpc } from "@/lib/trpc";
 
 export function useLeaguePlayers(refetch: () => void) {
   const { leagueId } = useParams<{ leagueId: string }>();
+  const [newName, setNewName] = useState("");
   const [newEmail, setNewEmail] = useState("");
 
   const addMember = trpc.league.addMember.useMutation({
     onSuccess: () => {
       refetch();
+      setNewName("");
       setNewEmail("");
       toast("Player added!");
     },
@@ -27,12 +29,15 @@ export function useLeaguePlayers(refetch: () => void) {
   });
 
   const handleAddPlayer = () => {
-    const trimmed = newEmail.trim();
-    if (!trimmed || !leagueId) return;
-    addMember.mutate({ leagueId, email: trimmed });
+    const trimmedName = newName.trim();
+    const trimmedEmail = newEmail.trim();
+    if (!trimmedName || !trimmedEmail || !leagueId) return;
+    addMember.mutate({ leagueId, name: trimmedName, email: trimmedEmail });
   };
 
   return {
+    newName,
+    setNewName,
     newEmail,
     setNewEmail,
     addMember,
