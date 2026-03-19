@@ -13,6 +13,15 @@ export const auth = betterAuth({
       clientSecret: process.env["GOOGLE_CLIENT_SECRET"]!,
       prompt: "select_account",
     },
+    facebook: {
+      clientId: process.env["FACEBOOK_CLIENT_ID"]!,
+      clientSecret: process.env["FACEBOOK_CLIENT_SECRET"]!,
+    },
+    apple: {
+      clientId: process.env["APPLE_CLIENT_ID"]!,
+      clientSecret: process.env["APPLE_CLIENT_SECRET"]!,
+      appBundleIdentifier: process.env["APPLE_APP_BUNDLE_IDENTIFIER"],
+    },
   },
   session: {
     expiresIn: 60 * 60 * 24 * 30, // 30 days

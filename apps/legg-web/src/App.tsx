@@ -33,6 +33,13 @@ const PageTransitionLoader = () => {
 
   useEffect(() => {
     window.scrollTo(0, 0);
+    // Reset zoom on navigation (iOS Safari auto-zooms on input focus and persists)
+    const viewport = document.querySelector('meta[name="viewport"]');
+    if (viewport) {
+      const original = viewport.getAttribute('content') ?? '';
+      viewport.setAttribute('content', original + ', maximum-scale=1');
+      setTimeout(() => viewport.setAttribute('content', original), 300);
+    }
     setLoading(true);
     const timer = setTimeout(() => setLoading(false), 300);
     return () => clearTimeout(timer);
