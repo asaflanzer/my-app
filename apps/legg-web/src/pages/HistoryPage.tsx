@@ -18,9 +18,11 @@ import {
 import { Button } from "@/components/ui/button";
 
 const STATUS_STYLES: Record<string, string> = {
-  active: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+  active:
+    "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
   done: "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400",
-  not_started: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
+  not_started:
+    "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400",
 };
 
 const STATUS_LABEL: Record<string, string> = {
@@ -31,9 +33,12 @@ const STATUS_LABEL: Record<string, string> = {
 
 export const HistoryPage = () => {
   const { data: session } = useSession();
-  const { data: leagues = [] } = trpc.league.listWithStatus.useQuery(undefined, {
-    enabled: !!session,
-  });
+  const { data: leagues = [] } = trpc.league.listWithStatus.useQuery(
+    undefined,
+    {
+      enabled: !!session,
+    },
+  );
 
   return (
     <div className="w-full sm:max-w-lg sm:mx-auto text-foreground pb-16">
@@ -68,18 +73,23 @@ export const HistoryPage = () => {
                   <TableCell className="text-muted-foreground text-xs px-2 py-2">
                     {idx + 1}
                   </TableCell>
-                  <TableCell className="py-2 text-sm font-medium">
+                  <TableCell className="py-2 text-[10px] truncate max-w-[180px] font-medium">
                     {league.name}
                   </TableCell>
                   <TableCell className="py-2">
                     <span
-                      className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${STATUS_STYLES[league.status] ?? ""}`}
+                      className={`inline-block px-2 py-0.5 rounded whitespace-nowrap text-[10px] font-medium ${STATUS_STYLES[league.status] ?? ""}`}
                     >
                       {STATUS_LABEL[league.status] ?? league.status}
                     </span>
                   </TableCell>
                   <TableCell className="py-2">
-                    <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" asChild>
+                    <Button
+                      variant="link"
+                      size="sm"
+                      className="h-6 px-2 text-[10px]"
+                      asChild
+                    >
                       <Link to={`/history/${league.id}`}>View matches</Link>
                     </Button>
                   </TableCell>
