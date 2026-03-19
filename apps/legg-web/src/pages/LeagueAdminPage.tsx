@@ -874,7 +874,7 @@ export const LeagueAdminPage = () => {
                         value={newTableNumber}
                         onChange={(e) => setNewTableNumber(e.target.value)}
                         onKeyDown={(e) => e.key === "Enter" && handleAddTable()}
-                        className="h-8 text-sm pr-9 w-36"
+                        className="h-8 text-sm pr-9 w-40"
                       />
                       <Button
                         variant="ghost"
