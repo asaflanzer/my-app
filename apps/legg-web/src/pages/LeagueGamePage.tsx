@@ -1,7 +1,6 @@
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { useSession } from "@/lib/auth-client";
 import { useLeagueContext } from "@/contexts/LeagueContext";
-import { trpc } from "@/lib/trpc";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -15,13 +14,11 @@ import { LeagueHero } from "@/components/league/LeagueHero";
 import { LeagueStandings } from "@/components/league/LeagueStandings";
 import { LeagueTables } from "@/components/league/LeagueTables";
 
-export const LeaguePage = () => {
+export const LeagueGamePage = () => {
   const navigate = useNavigate();
   const { leagueId } = useParams<{ leagueId: string }>();
   const { data: session, isPending: sessionPending } = useSession();
-  const { data: me } = trpc.auth.me.useQuery(undefined, { enabled: !!session });
-  const userIsAdmin = me?.isAdmin ?? false;
-  const { league, isLoading: leagueLoading } = useLeagueContext();
+  const { league, isLoading: leagueLoading, isAdmin } = useLeagueContext();
 
   if (sessionPending || leagueLoading) {
     return (
@@ -49,7 +46,7 @@ export const LeaguePage = () => {
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
-        {userIsAdmin && (
+        {isAdmin && (
           <Button
             size="xs"
             className="bg-amber-500 text-white"

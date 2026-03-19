@@ -48,7 +48,7 @@ const AdminPageContent = () => {
   );
 };
 
-export const LeagueAdminPage = () => (
+export const LeagueHostPage = () => (
   <AdminProvider>
     <AdminPageContent />
   </AdminProvider>

@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { router, protectedProcedure, adminProcedure } from "../trpc.js";
-import { leagues, leagueMembers, leagueTables, users, meetings } from "@my-app/db";
+import { router, protectedProcedure } from "../trpc.js";
+import { leagues, leagueMembers, leagueTables, users, hosts, meetings } from "@my-app/db";
 import { eq, and, asc } from "@my-app/db";
 import { TRPCError } from "@trpc/server";
 
@@ -23,7 +23,7 @@ async function assertLeagueHost(
 }
 
 export const leagueRouter = router({
-  create: adminProcedure
+  create: protectedProcedure
     .input(
       z.object({
         name: z.string().min(1),
@@ -43,6 +43,19 @@ export const leagueRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      if (!ctx.isAdmin) {
+        const [host] = await ctx.db
+          .select({ enabled: hosts.enabled })
+          .from(hosts)
+          .where(eq(hosts.userId, ctx.session.user.id))
+          .limit(1);
+        if (!host?.enabled) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "You do not have permission to create leagues",
+          });
+        }
+      }
       const leagueId = crypto.randomUUID();
       const now = new Date();
 

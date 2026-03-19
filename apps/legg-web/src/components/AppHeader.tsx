@@ -1,4 +1,4 @@
-import { Menu, Sun, Moon, LogOut, Trophy } from "lucide-react";
+import { Menu, Sun, Moon, LogOut, Trophy, Users } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSession, signOut } from "@/lib/auth-client";
@@ -37,6 +37,7 @@ export const AppHeader = () => {
   const headerHidden = useHideOnScroll();
   const { theme, toggleTheme } = useTheme();
   const { data: session } = useSession();
+  const { data: me } = trpc.auth.me.useQuery(undefined, { enabled: !!session });
   const { data: leagues } = trpc.league.list.useQuery(undefined, {
     enabled: !!session,
   });
@@ -107,6 +108,19 @@ export const AppHeader = () => {
                   </DrawerClose>
                 ))}
               </div>
+            )}
+
+            {me?.isAdmin && (
+              <DrawerClose asChild>
+                <Button
+                  variant="ghost"
+                  className="justify-start gap-2 hover:bg-muted/50"
+                  onClick={() => navigate("/admin/hosts")}
+                >
+                  <Users className="h-4 w-4" />
+                  Hosts
+                </Button>
+              </DrawerClose>
             )}
 
             <div className="mt-auto">

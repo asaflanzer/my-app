@@ -12,8 +12,8 @@ import { useState, useEffect } from "react";
 import { Loader } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { LoginPage } from "@/pages/LoginPage";
-import { LeaguePage } from "@/pages/LeaguePage";
-import { LeagueAdminPage } from "@/pages/LeagueAdminPage";
+import { LeagueGamePage } from "@/pages/LeagueGamePage";
+import { LeagueHostPage } from "@/pages/LeagueHostPage";
 import { HomePage } from "@/pages/HomePage";
 import { ChooseLeaguePage } from "@/pages/ChooseLeaguePage";
 import { MeetingDetailPage } from "@/pages/MeetingDetailPage";
@@ -21,6 +21,8 @@ import { AppHeader } from "@/components/AppHeader";
 import { Toaster } from "@/components/ui/sonner";
 import { LeagueProvider } from "@/contexts/LeagueContext";
 import { AdminRoute } from "@/components/AdminRoute";
+import { AppAdminRoute } from "@/components/AppAdminRoute";
+import { HostsAdminPage } from "@/pages/HostsAdminPage";
 
 const PageTransitionLoader = () => {
   const location = useLocation();
@@ -79,7 +81,7 @@ export default function App() {
                 </LeagueProvider>
               }
             >
-              <Route path="/league/:leagueId" element={<LeaguePage />} />
+              <Route path="/league/:leagueId" element={<LeagueGamePage />} />
               <Route
                 path="/league/:leagueId/meeting/:meetingId"
                 element={<MeetingDetailPage />}
@@ -87,8 +89,13 @@ export default function App() {
               <Route element={<AdminRoute />}>
                 <Route
                   path="/league/:leagueId/admin"
-                  element={<LeagueAdminPage />}
+                  element={<LeagueHostPage />}
                 />
+              </Route>
+            </Route>
+            <Route element={<AppLayout />}>
+              <Route element={<AppAdminRoute />}>
+                <Route path="/admin/hosts" element={<HostsAdminPage />} />
               </Route>
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />

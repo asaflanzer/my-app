@@ -1,12 +1,14 @@
 import { Navigate, Outlet } from "react-router-dom";
 import { useSession } from "@/lib/auth-client";
-import { useLeagueContext } from "@/contexts/LeagueContext";
+import { trpc } from "@/lib/trpc";
 
-export const AdminRoute = () => {
+export const AppAdminRoute = () => {
   const { data: session, isPending: sessionPending } = useSession();
-  const { isAdmin, isLoading } = useLeagueContext();
+  const { data: me, isPending: mePending } = trpc.auth.me.useQuery(undefined, {
+    enabled: !!session,
+  });
 
-  if (sessionPending || isLoading) {
+  if (sessionPending || (!!session && mePending)) {
     return (
       <div className="flex flex-1 items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-primary" />
@@ -15,7 +17,7 @@ export const AdminRoute = () => {
   }
 
   if (!session) return <Navigate to="/login" replace />;
-  if (!isAdmin) return <Navigate to="/" replace />;
+  if (!me?.isAdmin) return <Navigate to="/" replace />;
 
   return <Outlet />;
 };
