@@ -136,52 +136,59 @@ export const ChooseLeaguePage = () => {
           )}
 
         <div className="w-full max-w-sm space-y-3 px-8 pb-8 mt-auto">
-          <p className="text-sm text-neutral-500 text-center">
-            Want to host an event?{" "}
-            <button
-              className="text-primary underline underline-offset-2"
-              onClick={() => {
-                setContactOpen((v) => !v);
-                if (!contactOpen)
-                  setTimeout(() => textareaRef.current?.focus(), 50);
-              }}
-            >
-              Drop us a message
-            </button>
-          </p>
-          <div
-            className="overflow-hidden transition-all duration-300 ease-in-out"
-            style={{ maxHeight: contactOpen ? "240px" : "0px" }}
-          >
-            <div className="pt-1 space-y-2">
-              <textarea
-                ref={textareaRef}
-                value={contactMsg}
-                onChange={(e) => setContactMsg(e.target.value)}
-                placeholder="Tell us about your event…"
-                rows={4}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground resize-none focus:outline-none focus:ring-1 focus:ring-ring"
-              />
-              <div className="flex gap-2">
+          {!canCreateLeague && (
+            <>
+              <p className="text-sm text-neutral-500 text-center">
+                Want to host an event?{" "}
                 <button
-                  onClick={() => sendContact.mutate({ message: contactMsg })}
-                  disabled={!contactMsg.trim() || sendContact.isPending}
-                  className="flex-1 rounded-md bg-primary text-primary-foreground text-sm py-1.5 font-medium disabled:opacity-50"
-                >
-                  {sendContact.isPending ? "Sending…" : "Send"}
-                </button>
-                <button
+                  className="text-primary underline underline-offset-2"
                   onClick={() => {
-                    setContactOpen(false);
-                    setContactMsg("");
+                    setContactOpen((v) => !v);
+                    if (!contactOpen)
+                      setTimeout(() => textareaRef.current?.focus(), 50);
                   }}
-                  className="rounded-md border border-border px-3 py-1.5 text-sm text-muted-foreground"
                 >
-                  Cancel
+                  Drop us a message
                 </button>
+              </p>
+              <div
+                className="overflow-hidden transition-all duration-300 ease-in-out"
+                style={{ maxHeight: contactOpen ? "240px" : "0px" }}
+              >
+                <div className="pt-1 space-y-2">
+                  <textarea
+                    ref={textareaRef}
+                    value={contactMsg}
+                    onChange={(e) => setContactMsg(e.target.value)}
+                    placeholder="Tell us about your event…"
+                    rows={4}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground resize-none focus:outline-none focus:ring-1 focus:ring-ring"
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() =>
+                        sendContact.mutate({ message: contactMsg })
+                      }
+                      disabled={!contactMsg.trim() || sendContact.isPending}
+                      className="flex-1 rounded-md bg-primary text-primary-foreground text-sm py-1.5 font-medium disabled:opacity-50"
+                    >
+                      {sendContact.isPending ? "Sending…" : "Send"}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setContactOpen(false);
+                        setContactMsg("");
+                      }}
+                      className="rounded-md border border-border px-3 py-1.5 text-sm text-muted-foreground"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
+            </>
+          )}
+
           {canCreateLeague &&
             (!showCreate ? (
               <Button
