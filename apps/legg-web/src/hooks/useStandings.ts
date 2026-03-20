@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import type { IEnrichedPlayer } from "@/contexts/LeagueContext";
+import { sortStandings } from "@/lib/standings.utils";
 
 const INITIAL_LIMIT = 10;
 const BEFORE_ME = 4;
@@ -14,14 +15,7 @@ export function useStandings(
 ) {
   const [standingsExpanded, setStandingsExpanded] = useState(false);
 
-  const sorted = useMemo(
-    () =>
-      [...players].sort((a, b) => {
-        if (a.disabled !== b.disabled) return a.disabled ? 1 : -1;
-        return b.pts - a.pts || b.wins - a.wins;
-      }),
-    [players],
-  );
+  const sorted = useMemo(() => sortStandings(players), [players]);
 
   const visibleRows = useMemo<ScoreboardRow[]>(() => {
     const meIndex = sorted.findIndex((p) => p.id === myMemberId);
@@ -53,5 +47,11 @@ export function useStandings(
 
   const needsTruncation = sorted.length > INITIAL_LIMIT;
 
-  return { sorted, visibleRows, needsTruncation, standingsExpanded, setStandingsExpanded };
+  return {
+    sorted,
+    visibleRows,
+    needsTruncation,
+    standingsExpanded,
+    setStandingsExpanded,
+  };
 }

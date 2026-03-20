@@ -27,6 +27,7 @@ export const AdminPlayersSection = () => {
     addMember,
     removeMember,
     toggleDisabled,
+    toggleQualified,
     handleAddPlayer,
   } = useAdminContext();
 
@@ -69,6 +70,9 @@ export const AdminPlayersSection = () => {
               <TableHead className="w-14 text-center text-xs px-2">
                 Active
               </TableHead>
+              <TableHead className="w-16 text-center text-xs px-2">
+                Qualified
+              </TableHead>
               <TableHead className="w-8 px-1" />
             </TableRow>
           </TableHeader>
@@ -104,7 +108,21 @@ export const AdminPlayersSection = () => {
                         memberId: member.id,
                       })
                     }
-                    aria-label={`Toggle ${member.userName}`}
+                    aria-label={`Toggle active ${member.userName}`}
+                  />
+                </TableCell>
+                <TableCell className="text-center px-2 py-2">
+                  <Switch
+                    size="xs"
+                    checked={member.isQualified}
+                    onCheckedChange={() =>
+                      leagueId &&
+                      toggleQualified.mutate({
+                        leagueId,
+                        memberId: member.id,
+                      })
+                    }
+                    aria-label={`Toggle qualified ${member.userName}`}
                   />
                 </TableCell>
                 <TableCell className="px-1 py-2">

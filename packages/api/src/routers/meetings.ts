@@ -231,6 +231,93 @@ export const meetingRouter = router({
     .mutation(async ({ ctx, input }) => {
       await assertLeagueHost(ctx, input.leagueId);
 
+      // Fetch all match history recorded for this meeting
+      const meetingMatches = await ctx.db
+        .select()
+        .from(matchHistory)
+        .where(eq(matchHistory.meetingId, input.meetingId));
+
+      if (meetingMatches.length > 0) {
+        // Collect all member IDs involved in this meeting
+        const memberIds = [
+          ...new Set(
+            meetingMatches.flatMap((m) =>
+              [m.player1Id, m.player2Id].filter(Boolean) as string[],
+            ),
+          ),
+        ];
+
+        // Fetch current disabled (inactive) status for all involved members
+        const memberRows = await ctx.db
+          .select({ id: leagueMembers.id, disabled: leagueMembers.disabled })
+          .from(leagueMembers)
+          .where(inArray(leagueMembers.id, memberIds));
+
+        const disabledSet = new Set(
+          memberRows.filter((m) => m.disabled).map((m) => m.id),
+        );
+
+        // Accumulate stat deltas per member.
+        // Rule: games against an inactive opponent do NOT count for the active player.
+        //   - Both active OR both inactive → count for both players
+        //   - Mixed (one inactive, one active) → count only for the inactive player
+        const deltas = new Map<
+          string,
+          { wins: number; losses: number; games: number; score: number }
+        >();
+
+        const getDelta = (id: string) => {
+          if (!deltas.has(id)) deltas.set(id, { wins: 0, losses: 0, games: 0, score: 0 });
+          return deltas.get(id)!;
+        };
+
+        for (const match of meetingMatches) {
+          const p1 = match.player1Id;
+          const p2 = match.player2Id;
+          if (!p1 || !p2 || !match.winnerId) continue;
+
+          const p1Inactive = disabledSet.has(p1);
+          const p2Inactive = disabledSet.has(p2);
+          const mixed = p1Inactive !== p2Inactive;
+
+          const winnerScore = match.score1 > match.score2 ? match.score1 : match.score2;
+          const loserScore = match.score1 > match.score2 ? match.score2 : match.score1;
+          const scoreDiff = winnerScore - loserScore;
+
+          // For a mixed match, skip the active player — only credit the inactive one
+          const skipP1 = mixed && !p1Inactive;
+          const skipP2 = mixed && !p2Inactive;
+
+          if (!skipP1) {
+            const d = getDelta(p1);
+            d.games += 1;
+            if (match.winnerId === p1) { d.wins += 1; d.score += match.score1 - match.score2; }
+            else { d.losses += 1; d.score += match.score1 - match.score2; }
+          }
+
+          if (!skipP2) {
+            const d = getDelta(p2);
+            d.games += 1;
+            if (match.winnerId === p2) { d.wins += 1; d.score += match.score2 - match.score1; }
+            else { d.losses += 1; d.score += match.score2 - match.score1; }
+          }
+        }
+
+        // Apply accumulated deltas to each member
+        for (const [memberId, delta] of deltas) {
+          if (delta.games === 0) continue;
+          await ctx.db
+            .update(leagueMembers)
+            .set({
+              wins: sql`${leagueMembers.wins} + ${delta.wins}`,
+              losses: sql`${leagueMembers.losses} + ${delta.losses}`,
+              games: sql`${leagueMembers.games} + ${delta.games}`,
+              score: sql`${leagueMembers.score} + ${delta.score}`,
+            })
+            .where(eq(leagueMembers.id, memberId));
+        }
+      }
+
       await ctx.db
         .update(meetings)
         .set({ status: "done" })
@@ -430,7 +517,6 @@ export const meetingRouter = router({
       }
 
       const winnerId = score1 === input.raceTo ? table.player1Id : table.player2Id;
-      const loserId = score1 === input.raceTo ? table.player2Id : table.player1Id;
       const now = new Date();
 
       // Get meeting info for matchHistory
@@ -446,27 +532,7 @@ export const meetingRouter = router({
         .set({ status: "done", winnerId, updatedAt: now })
         .where(eq(matchTables.id, input.tableId));
 
-      // Update winner stats: +2 pts, +1 win, +1 game
-      await ctx.db
-        .update(leagueMembers)
-        .set({
-          wins: sql`${leagueMembers.wins} + 1`,
-          pts: sql`${leagueMembers.pts} + 2`,
-          games: sql`${leagueMembers.games} + 1`,
-        })
-        .where(eq(leagueMembers.id, winnerId));
-
-      // Update loser stats: +1 pt, +1 loss, +1 game
-      await ctx.db
-        .update(leagueMembers)
-        .set({
-          losses: sql`${leagueMembers.losses} + 1`,
-          pts: sql`${leagueMembers.pts} + 1`,
-          games: sql`${leagueMembers.games} + 1`,
-        })
-        .where(eq(leagueMembers.id, loserId));
-
-      // Insert matchHistory record
+      // Record match history
       if (meeting) {
         await ctx.db.insert(matchHistory).values({
           id: crypto.randomUUID(),

@@ -28,6 +28,11 @@ export function useLeaguePlayers(refetch: () => void) {
     onError: (e) => toast.error(e.message),
   });
 
+  const toggleQualified = trpc.league.toggleQualified.useMutation({
+    onSuccess: () => refetch(),
+    onError: (e) => toast.error(e.message),
+  });
+
   const handleAddPlayer = () => {
     const trimmedName = newName.trim();
     const trimmedEmail = newEmail.trim();
@@ -43,6 +48,7 @@ export function useLeaguePlayers(refetch: () => void) {
     addMember,
     removeMember,
     toggleDisabled,
+    toggleQualified,
     handleAddPlayer,
   };
 }

@@ -148,9 +148,10 @@ export const leagueRouter = router({
           leagueId: leagueMembers.leagueId,
           wins: leagueMembers.wins,
           losses: leagueMembers.losses,
-          pts: leagueMembers.pts,
           games: leagueMembers.games,
+          score: leagueMembers.score,
           disabled: leagueMembers.disabled,
+          isQualified: leagueMembers.isQualified,
           joinedAt: leagueMembers.joinedAt,
           userName: users.name,
           userEmail: users.email,
@@ -264,7 +265,7 @@ export const leagueRouter = router({
         userId: user.id,
         wins: 0,
         losses: 0,
-        pts: 0,
+        score: 0,
         disabled: false,
         joinedAt: new Date(),
       });
@@ -313,6 +314,29 @@ export const leagueRouter = router({
       await ctx.db
         .update(leagueMembers)
         .set({ disabled: !member.disabled })
+        .where(eq(leagueMembers.id, input.memberId));
+    }),
+
+  toggleQualified: protectedProcedure
+    .input(z.object({ leagueId: z.string(), memberId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      await assertLeagueHost(ctx, input.leagueId);
+
+      const [member] = await ctx.db
+        .select()
+        .from(leagueMembers)
+        .where(
+          and(
+            eq(leagueMembers.id, input.memberId),
+            eq(leagueMembers.leagueId, input.leagueId),
+          ),
+        )
+        .limit(1);
+      if (!member) throw new TRPCError({ code: "NOT_FOUND" });
+
+      await ctx.db
+        .update(leagueMembers)
+        .set({ isQualified: !member.isQualified })
         .where(eq(leagueMembers.id, input.memberId));
     }),
 
@@ -371,7 +395,7 @@ export const leagueRouter = router({
         userId,
         wins: 0,
         losses: 0,
-        pts: 0,
+        score: 0,
         disabled: true,
         joinedAt: new Date(),
       });

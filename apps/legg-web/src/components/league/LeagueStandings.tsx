@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { ChevronDown, Logs, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatScore } from "@/lib/standings.utils";
 import { useLeagueContext } from "@/contexts/LeagueContext";
 import { useStandings } from "@/hooks/useStandings";
 import { usePlayerHistory } from "@/hooks/usePlayerHistory";
@@ -31,10 +32,18 @@ export const LeagueStandings = () => {
   });
   const [historyMemberId, setHistoryMemberId] = useState<string | null>(null);
 
-  const { sorted, visibleRows, needsTruncation, standingsExpanded, setStandingsExpanded } =
-    useStandings(players, myMemberId);
+  const {
+    sorted,
+    visibleRows,
+    needsTruncation,
+    standingsExpanded,
+    setStandingsExpanded,
+  } = useStandings(players, myMemberId);
 
-  const { historyLoading, historyByMeeting } = usePlayerHistory(leagueId, historyMemberId);
+  const { historyLoading, historyByMeeting } = usePlayerHistory(
+    leagueId,
+    historyMemberId,
+  );
 
   const historyPlayer = historyMemberId
     ? players.find((p) => p.id === historyMemberId)
@@ -157,7 +166,7 @@ export const LeagueStandings = () => {
                     {p.games}
                   </span>
                   <span className="text-right text-secondary text-sm font-extrabold">
-                    {p.pts}
+                    {formatScore(p.score)}
                   </span>
                 </div>
               );
@@ -223,7 +232,8 @@ export const LeagueStandings = () => {
                           key={match.id}
                           className={cn(
                             "flex items-center justify-between px-4 py-3",
-                            idx !== matches.length - 1 && "border-b border-muted",
+                            idx !== matches.length - 1 &&
+                              "border-b border-muted",
                           )}
                         >
                           <div className="flex items-center gap-2 min-w-0">
@@ -245,12 +255,16 @@ export const LeagueStandings = () => {
                             <span
                               className={cn(
                                 "text-sm font-bold",
-                                match.won ? "text-emerald-500" : "text-foreground",
+                                match.won
+                                  ? "text-emerald-500"
+                                  : "text-foreground",
                               )}
                             >
                               {match.myScore}
                             </span>
-                            <span className="text-muted-foreground text-xs">–</span>
+                            <span className="text-muted-foreground text-xs">
+                              –
+                            </span>
                             <span
                               className={cn(
                                 "text-sm font-bold",

@@ -14,9 +14,10 @@ export interface IEnrichedPlayer {
   name: string;
   wins: number;
   losses: number;
-  pts: number;
   games: number;
+  score: number;
   disabled: boolean;
+  isQualified: boolean;
   status: PlayerStatus;
 }
 
@@ -38,7 +39,11 @@ const LeagueContext = createContext<ILeagueContext | null>(null);
 export const LeagueProvider = ({ children }: { children: ReactNode }) => {
   const { leagueId } = useParams<{ leagueId: string }>();
 
-  const { data: league, isLoading, refetch } = trpc.league.getById.useQuery(
+  const {
+    data: league,
+    isLoading,
+    refetch,
+  } = trpc.league.getById.useQuery(
     { leagueId: leagueId ?? "" },
     { enabled: !!leagueId },
   );
@@ -64,9 +69,10 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
       name: m.userName,
       wins: m.wins,
       losses: m.losses,
-      pts: m.pts,
       games: m.games,
+      score: m.score,
       disabled: m.disabled,
+      isQualified: m.isQualified,
       status: statusMap.get(m.id) ?? ("available" as PlayerStatus),
     }));
   }, [league, activeMeeting]);
@@ -108,6 +114,7 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
 
 export const useLeagueContext = (): ILeagueContext => {
   const ctx = useContext(LeagueContext);
-  if (!ctx) throw new Error("useLeagueContext must be used within LeagueProvider");
+  if (!ctx)
+    throw new Error("useLeagueContext must be used within LeagueProvider");
   return ctx;
 };
