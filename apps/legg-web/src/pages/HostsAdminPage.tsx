@@ -132,7 +132,9 @@ export const HostsAdminPage = () => {
 
           {hosts.map((host, idx) => (
             <div key={host.id} className="flex items-center gap-3 px-3 py-3">
-              <span className="w-6 shrink-0 text-xs text-muted-foreground">{idx + 1}</span>
+              <span className="w-6 shrink-0 text-xs text-muted-foreground">
+                {idx + 1}
+              </span>
               <div className="flex-1 flex flex-col gap-0.5 min-w-0">
                 <EditableName host={host} />
                 <span className="text-[10px] text-neutral-500 leading-tight truncate">
@@ -177,7 +179,9 @@ export const HostsAdminPage = () => {
           ))}
 
           <div className="flex items-start gap-3 px-3 py-3">
-            <span className="w-6 shrink-0 text-xs text-muted-foreground pt-2">{hosts.length + 1}</span>
+            <span className="w-6 shrink-0 text-xs text-muted-foreground pt-2">
+              {hosts.length + 1}
+            </span>
             <div className="flex-1 flex flex-col gap-1.5">
               <Input
                 placeholder="Name"
