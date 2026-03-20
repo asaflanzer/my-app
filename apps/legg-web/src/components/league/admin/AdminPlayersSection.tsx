@@ -2,23 +2,16 @@ import { useState } from "react";
 import { ChevronDown, ChevronUp, Plus, Trash2 } from "lucide-react";
 import { useParams } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { formatScore, sortStandings } from "@/lib/standings.utils";
 import { useLeagueContext } from "@/contexts/LeagueContext";
 import { useAdminContext } from "@/contexts/AdminContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 
 export const AdminPlayersSection = () => {
   const { leagueId } = useParams<{ leagueId: string }>();
-  const { league } = useLeagueContext();
+  const { league, players } = useLeagueContext();
   const {
     newName,
     setNewName,
@@ -36,6 +29,8 @@ export const AdminPlayersSection = () => {
   if (!league) return null;
 
   const { members } = league;
+  const memberEmailMap = new Map(members.map((m) => [m.id, m.userEmail]));
+  const sortedPlayers = sortStandings(players);
 
   return (
     <section className="space-y-3">
@@ -62,70 +57,99 @@ export const AdminPlayersSection = () => {
         </div>
       </button>
       {open && (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-6 px-2 text-xs">#</TableHead>
-              <TableHead className="text-xs">Name</TableHead>
-              <TableHead className="w-14 text-center text-xs px-2">
-                Active
-              </TableHead>
-              <TableHead className="w-16 text-center text-xs px-2">
-                Qualified
-              </TableHead>
-              <TableHead className="w-8 px-1" />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {members.map((member, idx) => (
-              <TableRow key={member.id}>
-                <TableCell className="text-muted-foreground text-xs px-2 py-2">
-                  {idx + 1}
-                </TableCell>
-                <TableCell className="py-2">
-                  <div className="flex flex-col gap-0.5">
-                    <span
-                      className={cn(
-                        "text-sm font-medium leading-tight",
-                        member.disabled && "line-through text-muted-foreground",
-                      )}
-                    >
-                      {member.userName}
+        <div className="bg-card border border-card-border rounded-xl overflow-hidden">
+          {/* Header */}
+          <div className="grid grid-cols-[20px_1fr_auto] px-3 py-[7px] border-b border-muted text-[10px] text-muted-foreground uppercase tracking-[.8px]">
+            <span>#</span>
+            <span>Player</span>
+            <div className="flex items-center gap-3">
+              <span className="w-8 text-center">Active</span>
+              <span className="w-12 text-center">Qual.</span>
+              <span className="w-7" />
+            </div>
+          </div>
+
+          {/* Member rows */}
+          {sortedPlayers.map((player, idx) => (
+            <div
+              key={player.id}
+              className="grid grid-cols-[20px_1fr_auto] px-3 py-2.5 border-b border-muted last:border-b-0 items-start"
+            >
+              <span className="text-[11px] text-muted-foreground pt-0.5">
+                {idx + 1}
+              </span>
+
+              <div className="flex flex-col gap-1 min-w-0">
+                <div className="flex flex-col gap-0.5">
+                  <span
+                    className={cn(
+                      "text-sm font-medium leading-tight",
+                      player.disabled && "line-through text-muted-foreground",
+                    )}
+                  >
+                    {player.name}
+                  </span>
+                  <span className="text-xs text-neutral-500 leading-tight truncate">
+                    {memberEmailMap.get(player.id)}
+                  </span>
+                </div>
+                {/* Stats */}
+                <div className="flex gap-3 mt-0.5">
+                  <span className="text-[11px]">
+                    <span className="text-muted-foreground">W </span>
+                    <span className="text-emerald-500 font-semibold">
+                      {player.wins}
                     </span>
-                    <span className="text-xs text-neutral-500 leading-tight truncate max-w-[180px]">
-                      {member.userEmail}
+                  </span>
+                  <span className="text-[11px]">
+                    <span className="text-muted-foreground">L </span>
+                    <span className="text-red-400 font-semibold">
+                      {player.losses}
                     </span>
-                  </div>
-                </TableCell>
-                <TableCell className="text-center px-2 py-2">
+                  </span>
+                  <span className="text-[11px]">
+                    <span className="text-muted-foreground">G </span>
+                    <span className="font-semibold">{player.games}</span>
+                  </span>
+                  <span className="text-[11px]">
+                    <span className="text-muted-foreground">Pts </span>
+                    <span className="text-secondary font-extrabold">
+                      {formatScore(player.score)}
+                    </span>
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="w-8 flex justify-center">
                   <Switch
                     size="xs"
-                    checked={!member.disabled}
+                    checked={!player.disabled}
                     onCheckedChange={() =>
                       leagueId &&
                       toggleDisabled.mutate({
                         leagueId,
-                        memberId: member.id,
+                        memberId: player.id,
                       })
                     }
-                    aria-label={`Toggle active ${member.userName}`}
+                    aria-label={`Toggle active ${player.name}`}
                   />
-                </TableCell>
-                <TableCell className="text-center px-2 py-2">
+                </div>
+                <div className="w-12 flex justify-center">
                   <Switch
                     size="xs"
-                    checked={member.isQualified}
+                    checked={player.isQualified}
                     onCheckedChange={() =>
                       leagueId &&
                       toggleQualified.mutate({
                         leagueId,
-                        memberId: member.id,
+                        memberId: player.id,
                       })
                     }
-                    aria-label={`Toggle qualified ${member.userName}`}
+                    aria-label={`Toggle qualified ${player.name}`}
                   />
-                </TableCell>
-                <TableCell className="px-1 py-2">
+                </div>
+                <div className="w-7 flex justify-center">
                   <Button
                     variant="ghost"
                     size="icon"
@@ -134,61 +158,61 @@ export const AdminPlayersSection = () => {
                       leagueId &&
                       removeMember.mutate({
                         leagueId,
-                        memberId: member.id,
+                        memberId: player.id,
                       })
                     }
-                    aria-label={`Remove ${member.userName}`}
+                    aria-label={`Remove ${player.name}`}
                   >
                     <Trash2 className="h-3 w-3" />
                   </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-            <TableRow>
-              <TableCell className="text-muted-foreground text-xs px-2 py-2">
-                {members.length + 1}
-              </TableCell>
-              <TableCell colSpan={3} className="py-2">
-                <div className="flex flex-col gap-1.5">
-                  <Input
-                    placeholder="Full name"
-                    type="text"
-                    maxLength={100}
-                    value={newName}
-                    onChange={(e) => setNewName(e.target.value)}
-                    className="h-8 text-sm"
-                  />
-                  <div className="relative">
-                    <Input
-                      placeholder="Gmail address"
-                      type="email"
-                      maxLength={255}
-                      value={newEmail}
-                      onChange={(e) => setNewEmail(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && handleAddPlayer()}
-                      className="h-8 text-sm pr-9"
-                    />
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="absolute right-0 top-0 h-8 w-8"
-                      onClick={handleAddPlayer}
-                      disabled={
-                        !newName.trim() ||
-                        !newEmail.trim() ||
-                        !newEmail.toLowerCase().endsWith("@gmail.com") ||
-                        addMember.isPending
-                      }
-                      aria-label="Add player"
-                    >
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  </div>
                 </div>
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
+              </div>
+            </div>
+          ))}
+
+          {/* Add player row */}
+          <div className="grid grid-cols-[20px_1fr] px-3 py-2.5">
+            <span className="text-[11px] text-muted-foreground pt-2">
+              {members.length + 1}
+            </span>
+            <div className="flex flex-col gap-1.5">
+              <Input
+                placeholder="Full name"
+                type="text"
+                maxLength={100}
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                className="h-8 text-sm"
+              />
+              <div className="relative">
+                <Input
+                  placeholder="Gmail address"
+                  type="email"
+                  maxLength={255}
+                  value={newEmail}
+                  onChange={(e) => setNewEmail(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleAddPlayer()}
+                  className="h-8 text-sm pr-9"
+                />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-0 top-0 h-8 w-8"
+                  onClick={handleAddPlayer}
+                  disabled={
+                    !newName.trim() ||
+                    !newEmail.trim() ||
+                    !newEmail.toLowerCase().endsWith("@gmail.com") ||
+                    addMember.isPending
+                  }
+                  aria-label="Add player"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </section>
   );
