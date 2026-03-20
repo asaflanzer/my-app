@@ -280,10 +280,6 @@ export const meetingRouter = router({
           const p2Inactive = disabledSet.has(p2);
           const mixed = p1Inactive !== p2Inactive;
 
-          const winnerScore = match.score1 > match.score2 ? match.score1 : match.score2;
-          const loserScore = match.score1 > match.score2 ? match.score2 : match.score1;
-          const scoreDiff = winnerScore - loserScore;
-
           // For a mixed match, skip the active player — only credit the inactive one
           const skipP1 = mixed && !p1Inactive;
           const skipP2 = mixed && !p2Inactive;
