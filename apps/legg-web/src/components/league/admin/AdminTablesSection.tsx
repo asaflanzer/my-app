@@ -11,14 +11,6 @@ import { useParams } from "react-router-dom";
 import { useAdminContext } from "@/contexts/AdminContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 
 export const AdminTablesSection = () => {
   const { leagueId } = useParams<{ leagueId: string }>();
@@ -60,98 +52,83 @@ export const AdminTablesSection = () => {
         </div>
       </button>
       {open && (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="text-xs">Id</TableHead>
-              <TableHead className="text-xs">Table Number</TableHead>
-              <TableHead className="w-16 px-1" />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {(leagueTablesList.data ?? []).map((t, idx) => (
-              <TableRow key={t.id}>
-                <TableCell className="text-muted-foreground text-xs px-2 py-2 truncate max-w-[80px]">
+        <div className="bg-card border border-card-border rounded-xl overflow-hidden">
+          {(leagueTablesList.data ?? []).map((t, idx) => (
+            <div
+              key={t.id}
+              className="flex items-center justify-between px-3 py-2 border-b border-muted"
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-[11px] text-muted-foreground w-5 shrink-0">
                   {idx + 1}
-                </TableCell>
-                <TableCell className="py-2">
-                  {editingTableId === t.id ? (
-                    <Input
-                      type="number"
-                      min={1}
-                      value={editingTableNumber}
-                      onChange={(e) => setEditingTableNumber(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && handleSaveTable()}
-                      className="h-8 text-sm w-20"
-                    />
-                  ) : (
-                    <span className="text-sm font-medium">{t.tableNumber}</span>
-                  )}
-                </TableCell>
-                <TableCell className="px-1 py-2">
-                  <div className="flex items-center gap-0.5">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                      onClick={() =>
-                        editingTableId === t.id
-                          ? handleSaveTable()
-                          : startEditTable(t)
-                      }
-                      aria-label={editingTableId === t.id ? "Save" : "Edit"}
-                    >
-                      {editingTableId === t.id ? (
-                        <Check className="h-3 w-3" />
-                      ) : (
-                        <Pencil className="h-3 w-3 text-neutral-500" />
-                      )}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                      onClick={() =>
-                        leagueId &&
-                        removeTable.mutate({ leagueId, tableId: t.id })
-                      }
-                      aria-label={`Remove table ${t.tableNumber}`}
-                    >
-                      <Trash2 className="h-3 w-3 text-neutral-500" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-            <TableRow>
-              <TableCell className="text-muted-foreground text-xs px-2 py-2">
-                {(leagueTablesList.data?.length ?? 0) + 1}
-              </TableCell>
-              <TableCell colSpan={2} className="py-2">
-                <div className="flex justify-between items-center gap-2">
+                </span>
+                {editingTableId === t.id ? (
                   <Input
-                    placeholder="Table Number"
-                    value={newTableNumber}
-                    onChange={(e) => {
-                      const val = e.target.value.replace(/[^0-9]/g, "");
-                      setNewTableNumber(val ? String(Number(val)) : "");
-                    }}
-                    onKeyDown={(e) => e.key === "Enter" && handleAddTable()}
-                    className="h-8 text-sm pr-9 w-40"
+                    type="number"
+                    min={1}
+                    value={editingTableNumber}
+                    onChange={(e) => setEditingTableNumber(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleSaveTable()}
+                    className="h-7 text-sm w-20"
                   />
-                  <Button
-                    size="xs"
-                    onClick={handleAddTable}
-                    disabled={!newTableNumber.trim() || addTable.isPending}
-                    aria-label="Add table"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
+                ) : (
+                  <span className="text-sm font-medium">{t.tableNumber}</span>
+                )}
+              </div>
+              <div className="flex items-center gap-0.5 shrink-0">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                  onClick={() =>
+                    editingTableId === t.id ? handleSaveTable() : startEditTable(t)
+                  }
+                  aria-label={editingTableId === t.id ? "Save" : "Edit"}
+                >
+                  {editingTableId === t.id ? (
+                    <Check className="h-3 w-3" />
+                  ) : (
+                    <Pencil className="h-3 w-3 text-neutral-500" />
+                  )}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                  onClick={() =>
+                    leagueId && removeTable.mutate({ leagueId, tableId: t.id })
+                  }
+                  aria-label={`Remove table ${t.tableNumber}`}
+                >
+                  <Trash2 className="h-3 w-3 text-neutral-500" />
+                </Button>
+              </div>
+            </div>
+          ))}
+          <div className="flex items-center gap-2 px-3 py-2">
+            <span className="text-[11px] text-muted-foreground w-5 shrink-0">
+              {(leagueTablesList.data?.length ?? 0) + 1}
+            </span>
+            <Input
+              placeholder="Table Number"
+              value={newTableNumber}
+              onChange={(e) => {
+                const val = e.target.value.replace(/[^0-9]/g, "");
+                setNewTableNumber(val ? String(Number(val)) : "");
+              }}
+              onKeyDown={(e) => e.key === "Enter" && handleAddTable()}
+              className="h-7 text-sm flex-1"
+            />
+            <Button
+              size="xs"
+              onClick={handleAddTable}
+              disabled={!newTableNumber.trim() || addTable.isPending}
+              aria-label="Add table"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
       )}
     </section>
   );

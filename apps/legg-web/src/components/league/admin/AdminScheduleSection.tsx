@@ -21,7 +21,7 @@ export const AdminScheduleSection = () => {
       <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
         League Schedule
       </h2>
-      <div className="flex flex-wrap gap-6">
+      <div className="grid grid-cols-2 gap-3">
         <DatePicker
           label="Start Date"
           value={league.startDate}
@@ -42,11 +42,11 @@ export const AdminScheduleSection = () => {
                 startTime: e.target.value,
               })
             }
-            className="w-20"
+            className="w-full"
           />
         </div>
       </div>
-      <div className="flex flex-wrap gap-6">
+      <div className="grid grid-cols-3 gap-3">
         <div className="flex flex-col gap-1.5">
           <Label className="text-xs font-normal text-muted-foreground">
             Meetings
@@ -61,7 +61,7 @@ export const AdminScheduleSection = () => {
                 regularMeetings: Math.max(1, Number(e.target.value)),
               })
             }
-            className="w-24"
+            className="w-full"
           />
         </div>
         <div className="flex flex-col gap-1.5">
@@ -78,7 +78,7 @@ export const AdminScheduleSection = () => {
                 playoffMeetings: Math.max(1, Number(e.target.value)),
               })
             }
-            className="w-24"
+            className="w-full"
           />
         </div>
         <div className="flex flex-col gap-1.5">
@@ -95,7 +95,7 @@ export const AdminScheduleSection = () => {
                 maxPlayers: Math.max(1, Number(e.target.value)),
               })
             }
-            className="w-24"
+            className="w-full"
           />
         </div>
       </div>

@@ -15,14 +15,6 @@ import { cn } from "@/lib/utils";
 import { useLeagueContext } from "@/contexts/LeagueContext";
 import { useAdminContext } from "@/contexts/AdminContext";
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 
 export const AdminMeetingsSection = () => {
   const { leagueId } = useParams<{ leagueId: string }>();
@@ -92,62 +84,54 @@ export const AdminMeetingsSection = () => {
         </button>
       </div>
       {open && (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="text-xs">Meeting</TableHead>
-              <TableHead className="text-xs">Date</TableHead>
-              <TableHead className="w-28 text-center text-xs px-2">
-                Status
-              </TableHead>
-              <TableHead className="w-16 px-1" />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {allMeetingSlots.map((slot, idx) => {
-              const isCurrent = idx === currentSlotIndex;
-              const meeting = slot.data;
-              const status = meeting?.status ?? null;
-              const isCompleted = status === "done";
-              const isStarted = !!meeting && status !== "inactive";
+        <div className="bg-card border border-card-border rounded-xl overflow-hidden">
+          {allMeetingSlots.map((slot, idx) => {
+            const isCurrent = idx === currentSlotIndex;
+            const meeting = slot.data;
+            const status = meeting?.status ?? null;
+            const isCompleted = status === "done";
+            const isStarted = !!meeting && status !== "inactive";
 
-              const statusLabel =
-                status === "active"
-                  ? "Active"
-                  : status === "paused"
-                    ? "Paused"
-                    : status === "done"
-                      ? "Done"
-                      : status === "inactive"
-                        ? "Scheduled"
-                        : "—";
+            const statusLabel =
+              status === "active"
+                ? "Active"
+                : status === "paused"
+                  ? "Paused"
+                  : status === "done"
+                    ? "Done"
+                    : status === "inactive"
+                      ? "Scheduled"
+                      : "—";
 
-              const editingId = meeting?.id ?? `slot-${slot.meetingNumber}`;
+            const editingId = meeting?.id ?? `slot-${slot.meetingNumber}`;
 
-              return (
-                <TableRow
-                  key={slot.meetingNumber}
-                  className={isCurrent ? "bg-primary/5" : ""}
-                >
-                  <TableCell className="py-2">
-                    <span
-                      className={cn(
-                        "text-sm text-left whitespace-nowrap",
-                        isCurrent
-                          ? "font-semibold"
-                          : "font-medium text-muted-foreground",
-                        meeting &&
-                          "cursor-pointer hover:underline hover:text-foreground",
-                      )}
-                      onClick={() =>
-                        meeting &&
-                        navigate(`/league/${leagueId}/meeting/${meeting.id}`)
-                      }
-                    >
-                      Meeting #{slot.meetingNumber}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-xs text-muted-foreground px-2 py-2 whitespace-nowrap">
+            return (
+              <div
+                key={slot.meetingNumber}
+                className={cn(
+                  "flex items-center justify-between px-3 py-2 border-b border-muted last:border-b-0",
+                  isCurrent && "bg-primary/5",
+                )}
+              >
+                {/* Left: meeting label + date */}
+                <div className="flex flex-col gap-0.5 min-w-0">
+                  <span
+                    className={cn(
+                      "text-sm whitespace-nowrap",
+                      isCurrent
+                        ? "font-semibold"
+                        : "font-medium text-muted-foreground",
+                      meeting &&
+                        "cursor-pointer hover:underline hover:text-foreground",
+                    )}
+                    onClick={() =>
+                      meeting &&
+                      navigate(`/league/${leagueId}/meeting/${meeting.id}`)
+                    }
+                  >
+                    Meeting #{slot.meetingNumber}
+                  </span>
+                  <div className="text-xs text-muted-foreground">
                     {editingDateMeetingId === editingId ? (
                       <div className="flex items-center gap-1">
                         <input
@@ -209,93 +193,91 @@ export const AdminMeetingsSection = () => {
                         )}
                       </div>
                     )}
-                  </TableCell>
-                  <TableCell className="text-center px-2 py-2">
-                    <span
-                      className={cn(
-                        "text-xs font-medium",
-                        status === "active"
-                          ? "text-primary"
-                          : "text-muted-foreground",
-                      )}
-                    >
-                      {statusLabel}
-                    </span>
-                  </TableCell>
-                  <TableCell className="px-1 py-2">
-                    {!isCompleted && (
-                      <div className="flex items-center gap-0.5">
-                        {status === "inactive" ? (
-                          isCurrent && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                              onClick={() =>
-                                leagueId && activateMeeting.mutate({ leagueId })
-                              }
-                              disabled={
-                                activateMeeting.isPending || !canStartMeeting
-                              }
-                              aria-label="Start meeting"
-                            >
-                              {activateMeeting.isPending ? (
-                                <Loader className="h-3.5 w-3.5 animate-spin" />
-                              ) : (
-                                <Play className="h-3.5 w-3.5" />
-                              )}
-                            </Button>
-                          )
-                        ) : (
+                  </div>
+                </div>
+
+                {/* Right: status + actions */}
+                <div className="flex items-center gap-1 shrink-0">
+                  <span
+                    className={cn(
+                      "text-xs font-medium",
+                      status === "active"
+                        ? "text-primary"
+                        : "text-muted-foreground",
+                    )}
+                  >
+                    {statusLabel}
+                  </span>
+                  {!isCompleted && (
+                    <div className="flex items-center gap-0.5">
+                      {status === "inactive" ? (
+                        isCurrent && (
                           <Button
                             variant="ghost"
                             size="icon"
                             className="h-7 w-7 text-muted-foreground hover:text-foreground"
                             onClick={() =>
-                              leagueId &&
-                              meeting &&
-                              pauseMeeting.mutate({
-                                leagueId,
-                                meetingId: meeting.id,
-                              })
+                              leagueId && activateMeeting.mutate({ leagueId })
                             }
-                            disabled={pauseMeeting.isPending}
-                            aria-label={
-                              status === "active" ? "Pause" : "Resume"
+                            disabled={
+                              activateMeeting.isPending || !canStartMeeting
                             }
+                            aria-label="Start meeting"
                           >
-                            {status === "active" ? (
-                              <Pause className="h-3.5 w-3.5" />
+                            {activateMeeting.isPending ? (
+                              <Loader className="h-3.5 w-3.5 animate-spin" />
                             ) : (
                               <Play className="h-3.5 w-3.5" />
                             )}
                           </Button>
-                        )}
-                        {isStarted && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 text-muted-foreground hover:text-primary"
-                            onClick={() =>
-                              meeting &&
-                              setConfirmComplete({
-                                id: meeting.id,
-                                meetingNumber: slot.meetingNumber,
-                              })
-                            }
-                            aria-label="Mark done"
-                          >
-                            <Check className="h-3.5 w-3.5" />
-                          </Button>
-                        )}
-                      </div>
-                    )}
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
+                        )
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                          onClick={() =>
+                            leagueId &&
+                            meeting &&
+                            pauseMeeting.mutate({
+                              leagueId,
+                              meetingId: meeting.id,
+                            })
+                          }
+                          disabled={pauseMeeting.isPending}
+                          aria-label={status === "active" ? "Pause" : "Resume"}
+                        >
+                          {status === "active" ? (
+                            <Pause className="h-3.5 w-3.5" />
+                          ) : (
+                            <Play className="h-3.5 w-3.5" />
+                          )}
+                        </Button>
+                      )}
+                      {isStarted && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-primary"
+                          onClick={() =>
+                            meeting &&
+                            setConfirmComplete({
+                              id: meeting.id,
+                              meetingNumber: slot.meetingNumber,
+                            })
+                          }
+                          aria-label="Mark done"
+                        >
+                          <Check className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       )}
     </section>
   );
