@@ -42,7 +42,7 @@ export const AdminScheduleSection = () => {
                 startTime: e.target.value,
               })
             }
-            className="w-full h-10"
+            className="w-full h-10 overflow-hidden"
           />
         </div>
       </div>
