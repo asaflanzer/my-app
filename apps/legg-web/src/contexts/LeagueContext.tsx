@@ -52,8 +52,9 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     trpc.meeting.getActive.useQuery(
       { leagueId: leagueId ?? "" },
       {
-        enabled: !!leagueId && !!league?.hasStarted,
-        refetchInterval: (query) => (query.state.data ? 5000 : 30000),
+        enabled: !!leagueId,
+        refetchInterval: (query) =>
+          !!league?.hasStarted && (query.state.data ? 5000 : 30000),
       },
     );
 
