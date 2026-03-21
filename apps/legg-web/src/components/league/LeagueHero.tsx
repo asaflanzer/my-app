@@ -223,7 +223,14 @@ export const LeagueHero = () => {
                     <div className="flex items-center gap-2 mb-0.5">
                       {/* Player 1 */}
                       <div className="flex-1 flex flex-col items-start gap-1.5">
-                        <span className="text-sm font-bold text-foreground">
+                        <span
+                          className={cn(
+                            "text-sm font-bold",
+                            p1?.id === myMemberId
+                              ? "text-secondary"
+                              : "text-foreground",
+                          )}
+                        >
                           {p1?.name ?? "N/A"}
                         </span>
                         <div className="flex items-center gap-1.5">

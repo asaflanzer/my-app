@@ -45,7 +45,11 @@ export const LeagueProvider = ({ children }: { children: ReactNode }) => {
     refetch,
   } = trpc.league.getById.useQuery(
     { leagueId: leagueId ?? "" },
-    { enabled: !!leagueId },
+    {
+      enabled: !!leagueId,
+      refetchInterval: (query) =>
+        query.state.data?.hasStarted ? 5000 : false,
+    },
   );
 
   const { data: activeMeeting, refetch: refetchMeeting } =

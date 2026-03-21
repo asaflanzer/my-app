@@ -21,7 +21,7 @@ export const AdminScheduleSection = () => {
       <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
         League Schedule
       </h2>
-      <div className="grid grid-cols-[60%_40%] gap-3">
+      <div className="grid grid-cols-[3fr_2fr] gap-3">
         <DatePicker
           label="Start Date"
           value={league.startDate}
