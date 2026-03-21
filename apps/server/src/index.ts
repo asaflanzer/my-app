@@ -4,6 +4,7 @@ import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 import { auth } from "@my-app/auth";
+import { runMigrations } from "@my-app/db";
 import { appRouter, createContext } from "@my-app/api";
 
 const app = new Hono();
@@ -58,4 +59,10 @@ serve({ fetch: app.fetch, port, hostname: "0.0.0.0" }, () => {
   console.log(`Server running at http://localhost:${port}`);
   console.log(`Better Auth:  http://localhost:${port}/api/auth`);
   console.log(`tRPC:         http://localhost:${port}/trpc`);
+
+  const migrationsFolder = new URL("../../../packages/db/migrations", import.meta.url).pathname;
+  console.log("Running database migrations...");
+  runMigrations(migrationsFolder)
+    .then(() => console.log("Database migrations complete."))
+    .catch((err) => console.error("Migration failed:", err));
 });
