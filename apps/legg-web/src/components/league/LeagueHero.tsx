@@ -9,8 +9,14 @@ import { Switch } from "@/components/ui/switch";
 import { ScorePill } from "@/components/league/ScorePill";
 
 export const LeagueHero = () => {
-  const { league, myMemberId, activeMeeting, players, myPlayer, myActiveTable } =
-    useLeagueContext();
+  const {
+    league,
+    myMemberId,
+    activeMeeting,
+    players,
+    myPlayer,
+    myActiveTable,
+  } = useLeagueContext();
 
   const [is9ball, setIs9ball] = useState(false);
   const [simPast7, setSimPast7] = useState(false);
@@ -130,7 +136,9 @@ export const LeagueHero = () => {
               onClick={handleToggleReady}
               disabled={toggleReady.isPending}
               variant={
-                myReady || myActiveTable?.status === "active" ? "outline" : "default"
+                myReady || myActiveTable?.status === "active"
+                  ? "outline"
+                  : "default"
               }
               size="lg"
               className="w-full mb-4 text-xs"
@@ -220,7 +228,9 @@ export const LeagueHero = () => {
                         </span>
                         <div className="flex items-center gap-1.5">
                           <Button
-                            onClick={() => handleUpdateTableScore(t.id, "1", -1)}
+                            onClick={() =>
+                              handleUpdateTableScore(t.id, "1", -1)
+                            }
                             variant="ghost"
                             size="icon"
                             className="w-11 h-11 rounded-full bg-tinted-btn-bg border border-tinted-btn-border text-tinted-btn-text text-xl"
@@ -243,15 +253,22 @@ export const LeagueHero = () => {
                         <h2 className="text-[32px] font-extrabold text-foreground m-0 tracking-[2px] text-center min-w-[72px]">
                           <span
                             className={
-                              t.score1 > 0 ? "text-score-active" : "text-score-dim"
+                              t.score1 > 0
+                                ? "text-score-active"
+                                : "text-score-dim"
                             }
                           >
                             {t.score1}
                           </span>
-                          <span className="text-muted-foreground text-xl"> — </span>
+                          <span className="text-muted-foreground text-xl">
+                            {" "}
+                            —{" "}
+                          </span>
                           <span
                             className={
-                              t.score2 > 0 ? "text-score-active" : "text-score-dim"
+                              t.score2 > 0
+                                ? "text-score-active"
+                                : "text-score-dim"
                             }
                           >
                             {t.score2}
@@ -276,7 +293,9 @@ export const LeagueHero = () => {
                         </span>
                         <div className="flex items-center gap-1.5">
                           <Button
-                            onClick={() => handleUpdateTableScore(t.id, "2", -1)}
+                            onClick={() =>
+                              handleUpdateTableScore(t.id, "2", -1)
+                            }
                             variant="ghost"
                             size="icon"
                             className="w-11 h-11 rounded-full bg-tinted-btn-bg border border-tinted-btn-border text-tinted-btn-text text-xl"
@@ -303,7 +322,7 @@ export const LeagueHero = () => {
                         Submit Score
                       </Button>
                       <div className="flex items-center gap-1">
-                        <p className="text-xs">Don't want to play?</p>
+                        <p className="text-xs">Don&apos;t want to play?</p>
                         <Button
                           onClick={() => setOptOutModal(true)}
                           variant="link"
@@ -349,20 +368,27 @@ export const LeagueHero = () => {
                   { player: p1, key: "s1" as const },
                   { player: p2, key: "s2" as const },
                 ].map(({ player, key }) => (
-                  <div key={key} className="flex justify-between items-center mb-4">
+                  <div
+                    key={key}
+                    className="flex justify-between items-center mb-4"
+                  >
                     <span className="text-[15px] font-bold text-foreground">
                       {player?.name}
                     </span>
                     <div className="flex gap-[7px]">
-                      {Array.from({ length: raceTo + 1 }, (_, i) => i).map((v) => (
-                        <ScorePill
-                          key={v}
-                          v={v}
-                          active={sv[key] === v}
-                          winner={v === raceTo && sv[key] === raceTo}
-                          onPick={() => setSv((prev) => ({ ...prev, [key]: v }))}
-                        />
-                      ))}
+                      {Array.from({ length: raceTo + 1 }, (_, i) => i).map(
+                        (v) => (
+                          <ScorePill
+                            key={v}
+                            v={v}
+                            active={sv[key] === v}
+                            winner={v === raceTo && sv[key] === raceTo}
+                            onPick={() =>
+                              setSv((prev) => ({ ...prev, [key]: v }))
+                            }
+                          />
+                        ),
+                      )}
                     </div>
                   </div>
                 ))}

@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { ChevronDown, ChevronUp, Plus, Trash2 } from "lucide-react";
 import { useParams } from "react-router-dom";
-import { cn } from "@/lib/utils";
 import { formatScore, sortStandings } from "@/lib/standings.utils";
 import { useLeagueContext } from "@/contexts/LeagueContext";
 import { useAdminContext } from "@/contexts/AdminContext";

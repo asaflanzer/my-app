@@ -211,7 +211,7 @@ export const LeagueStandings = () => {
                 </DrawerClose>
               </div>
               <DrawerDescription className="text-xs text-muted-foreground">
-                Viewing player's match history
+                Viewing player&apos;s match history
               </DrawerDescription>
             </div>
           </DrawerHeader>

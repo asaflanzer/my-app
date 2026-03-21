@@ -232,7 +232,7 @@ export const HostsAdminPage = () => {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{leaguesDialogHost?.name}'s Leagues</DialogTitle>
+            <DialogTitle>{leaguesDialogHost?.name}&apos;s Leagues</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col gap-1 pt-2">
             {leaguesDialogHost?.leagues.map((l) => (

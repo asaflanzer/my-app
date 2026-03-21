@@ -43,7 +43,7 @@ export const MyLeaguesPage = () => {
 
         {hostedLeagues.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            You don't host any leagues yet.
+            You don&apos;t host any leagues yet.
           </p>
         ) : (
           <Table>

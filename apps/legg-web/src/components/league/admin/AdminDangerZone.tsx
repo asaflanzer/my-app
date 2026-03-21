@@ -40,7 +40,7 @@ export const AdminDangerZone = () => {
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Delete "{league.name}"?</AlertDialogTitle>
+                <AlertDialogTitle>Delete &quot;{league.name}&quot;?</AlertDialogTitle>
                 <AlertDialogDescription>
                   This will permanently delete the league and all its data —
                   members, meetings, and match history. This action cannot be
