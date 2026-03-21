@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { trpc } from "@/lib/trpc";
+import { useAppContext } from "@/contexts/AppContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -31,8 +32,11 @@ const EditableName = ({ host }: { host: Host }) => {
   const utils = trpc.useUtils();
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(host.name);
+  const { incrementLoading, decrementLoading } = useAppContext();
 
   const updateName = trpc.hosts.updateName.useMutation({
+    onMutate: () => incrementLoading(),
+    onSettled: () => decrementLoading(),
     onSuccess: () => utils.hosts.list.invalidate(),
     onError: () => setValue(host.name),
   });
@@ -81,10 +85,13 @@ export const HostsAdminPage = () => {
   const [newEmail, setNewEmail] = useState("");
   const [newName, setNewName] = useState("");
   const [leaguesDialogHost, setLeaguesDialogHost] = useState<Host | null>(null);
+  const { isLoading, incrementLoading, decrementLoading } = useAppContext();
 
   const { data: hosts = [], refetch } = trpc.hosts.list.useQuery();
 
   const grant = trpc.hosts.grant.useMutation({
+    onMutate: () => incrementLoading(),
+    onSettled: () => decrementLoading(),
     onSuccess: () => {
       setNewEmail("");
       setNewName("");
@@ -93,10 +100,14 @@ export const HostsAdminPage = () => {
   });
 
   const revoke = trpc.hosts.revoke.useMutation({
+    onMutate: () => incrementLoading(),
+    onSettled: () => decrementLoading(),
     onSuccess: () => refetch(),
   });
 
   const toggleEnabled = trpc.hosts.toggleEnabled.useMutation({
+    onMutate: () => incrementLoading(),
+    onSettled: () => decrementLoading(),
     onSuccess: () => refetch(),
   });
 
@@ -158,6 +169,7 @@ export const HostsAdminPage = () => {
               <div className="w-12 flex justify-center">
                 <Switch
                   checked={host.enabled}
+                  disabled={isLoading}
                   onCheckedChange={(enabled) =>
                     toggleEnabled.mutate({ hostId: host.id, enabled })
                   }

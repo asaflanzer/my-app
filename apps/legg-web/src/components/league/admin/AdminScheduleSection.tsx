@@ -42,7 +42,7 @@ export const AdminScheduleSection = () => {
                 startTime: e.target.value,
               })
             }
-            className="w-32"
+            className="w-20"
           />
         </div>
       </div>

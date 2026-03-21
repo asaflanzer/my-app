@@ -1,10 +1,12 @@
 import { useLeagueContext } from "@/contexts/LeagueContext";
 import { useAdminContext } from "@/contexts/AdminContext";
+import { useAppContext } from "@/contexts/AppContext";
 import { Switch } from "@/components/ui/switch";
 
 export const AdminVisibilitySection = () => {
   const { league } = useLeagueContext();
   const { updateSettings } = useAdminContext();
+  const { isLoading } = useAppContext();
 
   if (!league) return null;
 
@@ -26,6 +28,7 @@ export const AdminVisibilitySection = () => {
         </div>
         <Switch
           checked={league.isPublic}
+          disabled={isLoading}
           onCheckedChange={(checked) =>
             updateSettings.mutate({
               leagueId: league.id,

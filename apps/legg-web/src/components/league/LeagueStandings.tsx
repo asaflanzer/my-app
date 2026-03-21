@@ -139,10 +139,15 @@ export const LeagueStandings = () => {
                       isMe
                         ? "font-bold text-table-header"
                         : "font-normal text-foreground",
-                      p.disabled && "line-through opacity-40",
+                      p.disabled && "opacity-40",
                     )}
                   >
                     {p.name}
+                    {p.disabled && (
+                      <span className="text-[10px] bg-muted text-muted-foreground rounded px-1.5 py-0.5 font-medium leading-none opacity-100">
+                        Inactive
+                      </span>
+                    )}
                     {badge}
                     <button
                       onClick={(e) => {

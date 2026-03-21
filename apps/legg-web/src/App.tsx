@@ -20,6 +20,8 @@ import { MeetingDetailPage } from "@/pages/MeetingDetailPage";
 import { AppHeader } from "@/components/AppHeader";
 import { Toaster } from "@/components/ui/sonner";
 import { LeagueProvider } from "@/contexts/LeagueContext";
+import { AppContextProvider } from "@/contexts/AppContext";
+import { GlobalSpinner } from "@/components/GlobalSpinner";
 import { AdminRoute } from "@/components/AdminRoute";
 import { AppAdminRoute } from "@/components/AppAdminRoute";
 import { HostsAdminPage } from "@/pages/HostsAdminPage";
@@ -79,7 +81,9 @@ export default function App() {
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
+          <AppContextProvider>
           <PageTransitionLoader />
+          <GlobalSpinner />
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/leagues" element={<ChooseLeaguePage />} />
@@ -111,10 +115,10 @@ export default function App() {
                 <Route path="/admin/hosts" element={<HostsAdminPage />} />
               </Route>
             </Route>
-            x
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
           <Toaster />
+          </AppContextProvider>
         </BrowserRouter>
       </QueryClientProvider>
     </trpc.Provider>

@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { formatScore, sortStandings } from "@/lib/standings.utils";
 import { useLeagueContext } from "@/contexts/LeagueContext";
 import { useAdminContext } from "@/contexts/AdminContext";
+import { useAppContext } from "@/contexts/AppContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -24,6 +25,7 @@ export const AdminPlayersSection = () => {
     handleAddPlayer,
   } = useAdminContext();
 
+  const { isLoading } = useAppContext();
   const [open, setOpen] = useState(true);
 
   if (!league) return null;
@@ -81,13 +83,15 @@ export const AdminPlayersSection = () => {
 
               <div className="flex flex-col gap-1 min-w-0">
                 <div className="flex flex-col gap-0.5">
-                  <span
-                    className={cn(
-                      "text-sm font-medium leading-tight",
-                      player.disabled && "line-through text-muted-foreground",
+                  <span className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-sm font-medium leading-tight">
+                      {player.name}
+                    </span>
+                    {player.disabled && (
+                      <span className="text-[10px] bg-muted text-muted-foreground rounded px-1.5 py-0.5 font-medium leading-none">
+                        Inactive
+                      </span>
                     )}
-                  >
-                    {player.name}
                   </span>
                   <span className="text-xs text-neutral-500 leading-tight truncate">
                     {memberEmailMap.get(player.id)}
@@ -125,6 +129,7 @@ export const AdminPlayersSection = () => {
                   <Switch
                     size="xs"
                     checked={!player.disabled}
+                    disabled={isLoading}
                     onCheckedChange={() =>
                       leagueId &&
                       toggleDisabled.mutate({
@@ -139,6 +144,7 @@ export const AdminPlayersSection = () => {
                   <Switch
                     size="xs"
                     checked={player.isQualified}
+                    disabled={isLoading}
                     onCheckedChange={() =>
                       leagueId &&
                       toggleQualified.mutate({

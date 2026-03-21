@@ -1,5 +1,12 @@
 import { useState } from "react";
-import { Check, ChevronDown, ChevronUp, Pencil, Plus, Trash2 } from "lucide-react";
+import {
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Pencil,
+  Plus,
+  Trash2,
+} from "lucide-react";
 import { useParams } from "react-router-dom";
 import { useAdminContext } from "@/contexts/AdminContext";
 import { Button } from "@/components/ui/button";
@@ -74,9 +81,7 @@ export const AdminTablesSection = () => {
                       min={1}
                       value={editingTableNumber}
                       onChange={(e) => setEditingTableNumber(e.target.value)}
-                      onKeyDown={(e) =>
-                        e.key === "Enter" && handleSaveTable()
-                      }
+                      onKeyDown={(e) => e.key === "Enter" && handleSaveTable()}
                       className="h-8 text-sm w-20"
                     />
                   ) : (
@@ -126,16 +131,16 @@ export const AdminTablesSection = () => {
                 <div className="flex justify-between items-center gap-2">
                   <Input
                     placeholder="Table Number"
-                    type="number"
-                    min={1}
                     value={newTableNumber}
-                    onChange={(e) => setNewTableNumber(e.target.value)}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/[^0-9]/g, "");
+                      setNewTableNumber(val ? String(Number(val)) : "");
+                    }}
                     onKeyDown={(e) => e.key === "Enter" && handleAddTable()}
                     className="h-8 text-sm pr-9 w-40"
                   />
                   <Button
-                    variant="ghost"
-                    size="icon"
+                    size="xs"
                     onClick={handleAddTable}
                     disabled={!newTableNumber.trim() || addTable.isPending}
                     aria-label="Add table"

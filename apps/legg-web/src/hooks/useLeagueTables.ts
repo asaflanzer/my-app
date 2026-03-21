@@ -2,12 +2,14 @@ import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
+import { useAppContext } from "@/contexts/AppContext";
 
 export function useLeagueTables() {
   const { leagueId } = useParams<{ leagueId: string }>();
   const [newTableNumber, setNewTableNumber] = useState("");
   const [editingTableId, setEditingTableId] = useState<string | null>(null);
   const [editingTableNumber, setEditingTableNumber] = useState("");
+  const { incrementLoading, decrementLoading } = useAppContext();
 
   const utils = trpc.useUtils();
 
@@ -17,6 +19,8 @@ export function useLeagueTables() {
   );
 
   const addTable = trpc.league.addTable.useMutation({
+    onMutate: () => incrementLoading(),
+    onSettled: () => decrementLoading(),
     onSuccess: () => {
       void utils.league.listTables.invalidate();
       setNewTableNumber("");
@@ -25,6 +29,8 @@ export function useLeagueTables() {
   });
 
   const updateTable = trpc.league.updateTable.useMutation({
+    onMutate: () => incrementLoading(),
+    onSettled: () => decrementLoading(),
     onSuccess: () => {
       void utils.league.listTables.invalidate();
       setEditingTableId(null);
@@ -33,6 +39,8 @@ export function useLeagueTables() {
   });
 
   const removeTable = trpc.league.removeTable.useMutation({
+    onMutate: () => incrementLoading(),
+    onSettled: () => decrementLoading(),
     onSuccess: () => void utils.league.listTables.invalidate(),
     onError: (e) => toast.error(e.message),
   });

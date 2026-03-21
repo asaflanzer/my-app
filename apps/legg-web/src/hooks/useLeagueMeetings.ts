@@ -4,6 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import type { RouterOutputs } from "@my-app/api";
 import { trpc } from "@/lib/trpc";
+import { useAppContext } from "@/contexts/AppContext";
 
 type LeagueData = RouterOutputs["league"]["getById"];
 
@@ -18,6 +19,7 @@ type MeetingSlotData = {
 export function useLeagueMeetings(league: LeagueData | undefined) {
   const { leagueId } = useParams<{ leagueId: string }>();
   const navigate = useNavigate();
+  const { incrementLoading, decrementLoading } = useAppContext();
 
   const [confirmComplete, setConfirmComplete] = useState<{
     id: string;
@@ -39,6 +41,8 @@ export function useLeagueMeetings(league: LeagueData | undefined) {
   );
 
   const initializeMeetings = trpc.meeting.initialize.useMutation({
+    onMutate: () => incrementLoading(),
+    onSettled: () => decrementLoading(),
     onSuccess: () => {
       void utils.meeting.list.invalidate();
       toast("Schedule saved!");
@@ -47,6 +51,8 @@ export function useLeagueMeetings(league: LeagueData | undefined) {
   });
 
   const activateMeeting = trpc.meeting.activate.useMutation({
+    onMutate: () => incrementLoading(),
+    onSettled: () => decrementLoading(),
     onSuccess: () => {
       void utils.meeting.list.invalidate();
       toast("Meeting activated!");
@@ -56,11 +62,15 @@ export function useLeagueMeetings(league: LeagueData | undefined) {
   });
 
   const pauseMeeting = trpc.meeting.togglePause.useMutation({
+    onMutate: () => incrementLoading(),
+    onSettled: () => decrementLoading(),
     onSuccess: () => void utils.meeting.list.invalidate(),
     onError: (e) => toast.error(e.message),
   });
 
   const completeMeeting = trpc.meeting.complete.useMutation({
+    onMutate: () => incrementLoading(),
+    onSettled: () => decrementLoading(),
     onSuccess: () => {
       void utils.meeting.list.invalidate();
       setConfirmComplete(null);
@@ -70,6 +80,8 @@ export function useLeagueMeetings(league: LeagueData | undefined) {
   });
 
   const resetMeetings = trpc.meeting.reset.useMutation({
+    onMutate: () => incrementLoading(),
+    onSettled: () => decrementLoading(),
     onSuccess: () => {
       void utils.meeting.list.invalidate();
       toast("Meetings reset!");
@@ -78,6 +90,8 @@ export function useLeagueMeetings(league: LeagueData | undefined) {
   });
 
   const updateMeetingDate = trpc.meeting.updateDate.useMutation({
+    onMutate: () => incrementLoading(),
+    onSettled: () => decrementLoading(),
     onSuccess: () => void utils.meeting.list.invalidate(),
     onError: (e) => toast.error(e.message),
   });

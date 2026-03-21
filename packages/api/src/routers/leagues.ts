@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { router, protectedProcedure } from "../trpc.js";
-import { leagues, leagueMembers, leagueTables, users, hosts, meetings } from "@my-app/db";
+import { leagues, leagueMembers, leagueTables, users, hosts, meetings, matchHistory } from "@my-app/db";
 import { eq, and, asc, inArray } from "@my-app/db";
 import { TRPCError } from "@trpc/server";
 
@@ -315,6 +315,60 @@ export const leagueRouter = router({
         .update(leagueMembers)
         .set({ disabled: !member.disabled })
         .where(eq(leagueMembers.id, input.memberId));
+
+      // Recalculate all stats for the league based on updated disabled statuses
+      const allMatches = await ctx.db
+        .select()
+        .from(matchHistory)
+        .where(eq(matchHistory.leagueId, input.leagueId));
+
+      const allMembers = await ctx.db
+        .select({ id: leagueMembers.id, disabled: leagueMembers.disabled })
+        .from(leagueMembers)
+        .where(eq(leagueMembers.leagueId, input.leagueId));
+
+      await ctx.db
+        .update(leagueMembers)
+        .set({ wins: 0, losses: 0, games: 0, score: 0 })
+        .where(eq(leagueMembers.leagueId, input.leagueId));
+
+      if (allMatches.length > 0) {
+        const disabledSet = new Set(allMembers.filter((m) => m.disabled).map((m) => m.id));
+        const deltas = new Map<string, { wins: number; losses: number; games: number; score: number }>();
+        const getDelta = (id: string) => {
+          if (!deltas.has(id)) deltas.set(id, { wins: 0, losses: 0, games: 0, score: 0 });
+          return deltas.get(id)!;
+        };
+
+        for (const match of allMatches) {
+          const p1 = match.player1Id;
+          const p2 = match.player2Id;
+          if (!p1 || !p2 || !match.winnerId) continue;
+          const mixed = disabledSet.has(p1) !== disabledSet.has(p2);
+          const skipP1 = mixed && !disabledSet.has(p1);
+          const skipP2 = mixed && !disabledSet.has(p2);
+          if (!skipP1) {
+            const d = getDelta(p1);
+            d.games += 1;
+            if (match.winnerId === p1) { d.wins += 1; d.score += match.score1 - match.score2; }
+            else { d.losses += 1; d.score += match.score1 - match.score2; }
+          }
+          if (!skipP2) {
+            const d = getDelta(p2);
+            d.games += 1;
+            if (match.winnerId === p2) { d.wins += 1; d.score += match.score2 - match.score1; }
+            else { d.losses += 1; d.score += match.score2 - match.score1; }
+          }
+        }
+
+        for (const [memberId, delta] of deltas) {
+          if (delta.games === 0) continue;
+          await ctx.db
+            .update(leagueMembers)
+            .set({ wins: delta.wins, losses: delta.losses, games: delta.games, score: delta.score })
+            .where(eq(leagueMembers.id, memberId));
+        }
+      }
     }),
 
   toggleQualified: protectedProcedure

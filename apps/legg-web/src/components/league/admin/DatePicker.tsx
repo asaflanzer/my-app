@@ -28,7 +28,7 @@ export const DatePicker = ({ label, value, onChange }: IDatePickerProps) => {
           <Button
             variant="outline"
             className={cn(
-              "w-44 justify-start text-left font-normal overflow-hidden",
+              "w-50 justify-start text-left font-normal overflow-hidden",
               !selected && "text-muted-foreground",
             )}
           >

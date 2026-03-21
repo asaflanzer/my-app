@@ -26,7 +26,7 @@ export const AdminDangerZone = () => {
       </h2>
       <div className="rounded-lg border border-destructive/30 p-4">
         <div className="flex items-center justify-between">
-          <div>
+          <div className="mr-3">
             <p className="text-sm font-medium">Delete this league</p>
             <p className="text-xs text-muted-foreground">
               Permanently delete the league and all its data.
@@ -34,7 +34,7 @@ export const AdminDangerZone = () => {
           </div>
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant="destructive" size="sm">
+              <Button variant="destructive" size="xs">
                 Delete League
               </Button>
             </AlertDialogTrigger>
@@ -50,9 +50,7 @@ export const AdminDangerZone = () => {
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction
-                  onClick={() =>
-                    deleteLeague.mutate({ leagueId: league.id })
-                  }
+                  onClick={() => deleteLeague.mutate({ leagueId: league.id })}
                   disabled={deleteLeague.isPending}
                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 >
