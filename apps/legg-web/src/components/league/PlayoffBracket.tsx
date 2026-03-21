@@ -1,5 +1,5 @@
 import { useMemo, useRef } from "react";
-import { ChevronLeft, ChevronRight, Trophy } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { PlayoffGameCard } from "@/components/league/PlayoffGameCard";
 import type { IPlayoffBracket, IPlayoffGame } from "@/lib/playoffs.utils";
 import { groupGamesByRound } from "@/lib/playoffs.utils";
@@ -11,36 +11,45 @@ interface IPlayoffBracketProps {
   gameType: string;
 }
 
-const roundLabels = [
-  "Round 1",
-  "Round 2",
-  "Quarter-Finals",
-  "Semi-Finals",
-  "Finals",
-];
-
 // Layout constants — must match the compact card's rendered height.
-// Header: py-1 (~8px) + text (~16px) = ~24px
-// Two player rows: py-1.5 (~12px) + text (~20px) = ~32px each
-// Borders: ~2px  → total ≈ 90px
 const CARD_H = 90;
 const CARD_GAP = 8; // gap-2
 const SLOT_H = CARD_H + CARD_GAP;
 const CARD_W = 132;
 const CONN_W = 20;
 
+/** Label for a round based on how far it is from the last round. */
+function getRoundLabel(roundIndex: number, totalRounds: number): string {
+  const fromEnd = totalRounds - 1 - roundIndex;
+  switch (fromEnd) {
+    case 0:
+      return "Finals";
+    case 1:
+      return "Semi-Finals";
+    case 2:
+      return "Quarter-Finals";
+    default:
+      return `Round ${roundIndex + 1}`;
+  }
+}
+
 // Draws SVG connector lines between two adjacent round columns.
+// srcOffset / tgtOffset are pixel top-padding applied to each column for centering.
 function RoundConnectors({
   sourceGames,
   targetGames,
+  srcOffset,
+  tgtOffset,
+  svgH,
 }: {
   sourceGames: IPlayoffGame[];
   targetGames: IPlayoffGame[];
+  srcOffset: number;
+  tgtOffset: number;
+  svgH: number;
 }) {
-  const svgH = sourceGames.length * SLOT_H - CARD_GAP;
-
   // Group source games by their winner destination (0-based bracket.games index).
-  const winnerGroups = new Map<number, number[]>(); // tgtGameIdx → [srcPositions]
+  const winnerGroups = new Map<number, number[]>();
   sourceGames.forEach((sg, si) => {
     if (typeof sg.winnerNextGame !== "number") return;
     const list = winnerGroups.get(sg.winnerNextGame) ?? [];
@@ -48,7 +57,7 @@ function RoundConnectors({
     winnerGroups.set(sg.winnerNextGame, list);
   });
 
-  // Group loser connections separately.
+  // Loser drop-down connections.
   const loserLines: { srcY: number; tgtY: number }[] = [];
   sourceGames.forEach((sg, si) => {
     if (typeof sg.loserNextGame !== "number") return;
@@ -57,8 +66,8 @@ function RoundConnectors({
     );
     if (tgtIdx < 0) return;
     loserLines.push({
-      srcY: si * SLOT_H + CARD_H / 2,
-      tgtY: tgtIdx * SLOT_H + CARD_H / 2,
+      srcY: srcOffset + si * SLOT_H + CARD_H / 2,
+      tgtY: tgtOffset + tgtIdx * SLOT_H + CARD_H / 2,
     });
   });
 
@@ -76,11 +85,12 @@ function RoundConnectors({
       {Array.from(winnerGroups.entries()).map(([tgtGameIdx, srcPositions]) => {
         const tgtIdx = targetGames.findIndex((g) => g.game - 1 === tgtGameIdx);
         if (tgtIdx < 0) return null;
-        const tgtY = tgtIdx * SLOT_H + CARD_H / 2;
-        const srcYs = srcPositions.map((si) => si * SLOT_H + CARD_H / 2);
+        const tgtY = tgtOffset + tgtIdx * SLOT_H + CARD_H / 2;
+        const srcYs = srcPositions.map(
+          (si) => srcOffset + si * SLOT_H + CARD_H / 2,
+        );
 
         if (srcYs.length === 1) {
-          // Single source → L-shaped path
           const srcY = srcYs[0]!;
           return (
             <path
@@ -93,7 +103,6 @@ function RoundConnectors({
           );
         }
 
-        // Multiple sources → bracket shape
         const minY = Math.min(...srcYs);
         const maxY = Math.max(...srcYs);
         return (
@@ -148,10 +157,15 @@ export const PlayoffBracket = ({
     });
   };
 
-  const hasEnded =
-    bracket.champion !== null ||
-    bracket.runnerUp !== null ||
-    bracket.thirdPlace !== null;
+  // Max games in any round — used to compute vertical centering offsets.
+  const maxGames = useMemo(
+    () => Math.max(...rounds.map((r) => r.length)),
+    [rounds],
+  );
+  const maxColH = maxGames * SLOT_H - CARD_GAP;
+
+  /** Pixel top-offset to vertically center a round with N games. */
+  const getOffset = (n: number) => ((maxGames - n) * SLOT_H) / 2;
 
   return (
     <div className="py-4 space-y-4">
@@ -159,39 +173,9 @@ export const PlayoffBracket = ({
         Playoff Bracket
       </h2>
 
-      {/* Podium */}
-      {hasEnded && (
-        <div className="mx-4 rounded-xl border border-border bg-card p-4 space-y-2">
-          <div className="flex items-center gap-2 mb-3">
-            <Trophy className="h-4 w-4 text-yellow-500" />
-            <span className="text-sm font-bold">Final Standings</span>
-          </div>
-          {bracket.champion && (
-            <div className="flex items-center gap-2">
-              <span className="text-lg">🥇</span>
-              <span className="text-sm font-semibold">
-                {bracket.champion.name}
-              </span>
-            </div>
-          )}
-          {bracket.runnerUp && (
-            <div className="flex items-center gap-2">
-              <span className="text-lg">🥈</span>
-              <span className="text-sm">{bracket.runnerUp.name}</span>
-            </div>
-          )}
-          {bracket.thirdPlace && (
-            <div className="flex items-center gap-2">
-              <span className="text-lg">🥉</span>
-              <span className="text-sm">{bracket.thirdPlace.name}</span>
-            </div>
-          )}
-        </div>
-      )}
-
       {/* Bracket — horizontal scroll */}
       <div className="relative">
-        {/* Left scroll arrow */}
+        {/* Scroll arrows */}
         <button
           type="button"
           onClick={() => scroll("left")}
@@ -200,8 +184,6 @@ export const PlayoffBracket = ({
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
-
-        {/* Right scroll arrow */}
         <button
           type="button"
           onClick={() => scroll("right")}
@@ -211,10 +193,10 @@ export const PlayoffBracket = ({
           <ChevronRight className="h-4 w-4" />
         </button>
 
-        {/* Scrollable area — inset by arrow width so arrows don't overlap content */}
+        {/* Scrollable area */}
         <div
           ref={scrollRef}
-          className="overflow-x-auto scrollbar-none mx-8"
+          className="overflow-x-auto mx-8"
           style={{ scrollbarWidth: "none" }}
         >
           {/* Round labels row */}
@@ -223,31 +205,40 @@ export const PlayoffBracket = ({
               <div
                 key={i}
                 className="flex items-center justify-between shrink-0"
-                style={{
-                  width: CARD_W,
-                  marginRight: i < rounds.length - 1 ? CONN_W : 0,
-                }}
+                style={{ width: CARD_W, marginRight: CONN_W }}
               >
                 <span className="text-[10px] font-bold uppercase tracking-widest text-foreground">
-                  {roundLabels[i] ?? `R${i + 1}`}
+                  {getRoundLabel(i, bracket.totalRounds)}
                 </span>
                 <span className="text-[9px] text-muted-foreground">
                   {i + 1}/{bracket.totalRounds}
                 </span>
               </div>
             ))}
+            {/* Podium label */}
+            <div className="flex items-center shrink-0" style={{ width: CARD_W }}>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-foreground">
+                Podium
+              </span>
+            </div>
           </div>
 
-          {/* Game cards + connectors row */}
-          <div className="flex items-start pl-2 pb-4">
+          {/* Game cards + connector SVGs — all in one row */}
+          <div
+            className="flex items-start pl-2 pb-4"
+            style={{ height: maxColH }}
+          >
             {rounds.map((roundGames, i) => {
               const nextRound = rounds[i + 1];
+              const offset = getOffset(roundGames.length);
+              const nextOffset = nextRound ? getOffset(nextRound.length) : 0;
+
               return (
                 <div key={i} className="flex items-start shrink-0">
-                  {/* Round column */}
+                  {/* Round column — vertically centered via paddingTop */}
                   <div
                     className="flex flex-col gap-2 shrink-0"
-                    style={{ width: CARD_W }}
+                    style={{ width: CARD_W, paddingTop: offset }}
                   >
                     {roundGames.map((game) => (
                       <div key={game.game} style={{ minHeight: CARD_H }}>
@@ -261,16 +252,48 @@ export const PlayoffBracket = ({
                     ))}
                   </div>
 
-                  {/* SVG connector to next round */}
+                  {/* Connector SVG */}
                   {nextRound && (
                     <RoundConnectors
                       sourceGames={roundGames}
                       targetGames={nextRound}
+                      srcOffset={offset}
+                      tgtOffset={nextOffset}
+                      svgH={maxColH}
                     />
                   )}
                 </div>
               );
             })}
+
+            {/* Podium column */}
+            <div className="flex items-start shrink-0">
+              <div style={{ width: CONN_W, flexShrink: 0 }} />
+              <div
+                className="flex flex-col gap-2 shrink-0"
+                style={{ width: CARD_W, paddingTop: getOffset(3) }}
+              >
+                {(
+                  [
+                    { emoji: "🥇", label: "1st Place", player: bracket.champion },
+                    { emoji: "🥈", label: "2nd Place", player: bracket.runnerUp },
+                    { emoji: "🥉", label: "3rd Place", player: bracket.thirdPlace },
+                  ] as const
+                ).map(({ emoji, label, player }) => (
+                  <div
+                    key={label}
+                    className="rounded-lg border border-border bg-card text-card-foreground shadow-sm flex flex-col items-center justify-center gap-0.5 px-2"
+                    style={{ minHeight: CARD_H }}
+                  >
+                    <span className="text-xl leading-none">{emoji}</span>
+                    <span className="text-[9px] text-muted-foreground">{label}</span>
+                    <span className="text-[11px] font-semibold text-center leading-tight w-full truncate">
+                      {player?.name ?? "TBD"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>

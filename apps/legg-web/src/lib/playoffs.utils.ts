@@ -322,7 +322,7 @@ export function buildPlayoff8(members: IPlayoffPlayer[]): IPlayoffBracket {
       player2PrevGame: "Loser of Game 4",
     },
 
-    // ── Winners Quarter-final (round 2) ───────────────────────────────────
+    // ── Winners Semi-final (round 2) ──────────────────────────────────────
     // Game 9 (index 8): winners of G5 & G6
     //   Winner → index 12 (Game 13, winners final, slot 1)
     //   Loser  → index 11 (Game 12, losers SF, slot 2)
@@ -345,13 +345,13 @@ export function buildPlayoff8(members: IPlayoffPlayer[]): IPlayoffBracket {
       player2PrevGame: "Winner of Game 6",
     },
 
-    // ── Losers Round 2 (round 2) ──────────────────────────────────────────
+    // ── Losers Round 2 (round 1 — displayed in Quarter-Finals column) ───────
     // Game 10 (index 9): G7 winner vs G6 loser
     //   Winner → index 11 (Game 12, losers SF, slot 1)
     //   Loser  → ELIMINATED
     {
       game: 10,
-      round: 2,
+      round: 1,
       bracket: "losers",
       player1: null,
       player2: null,
@@ -368,11 +368,11 @@ export function buildPlayoff8(members: IPlayoffPlayer[]): IPlayoffBracket {
       player2PrevGame: "Loser of Game 6",
     },
     // Game 11 (index 10): G8 winner vs G5 loser
-    //   Winner → index 11 (Game 12, losers SF, slot 2) ← note: this is the other SF slot
+    //   Winner → index 11 (Game 12, losers SF, slot 2)
     //   Loser  → ELIMINATED
     {
       game: 11,
-      round: 2,
+      round: 1,
       bracket: "losers",
       player1: null,
       player2: null,
@@ -391,8 +391,8 @@ export function buildPlayoff8(members: IPlayoffPlayer[]): IPlayoffBracket {
 
     // ── Losers Semi-final (round 2) ───────────────────────────────────────
     // Game 12 (index 11): losers bracket final two survivors
-    //   Winner → index 12 (Game 13, winners final, slot 2)  ← challenges the undefeated finalist
-    //   Loser  → ELIMINATED
+    //   Winner → index 12 (Game 13, winners final, slot 2)
+    //   Loser  → index 14 (Game 15, 3rd place match, slot 1)
     {
       game: 12,
       round: 2,
@@ -406,16 +406,16 @@ export function buildPlayoff8(members: IPlayoffPlayer[]): IPlayoffBracket {
       isComplete: false,
       winnerNextGame: 12,
       winnerSlot: "2",
-      loserNextGame: null,
-      loserSlot: null,
+      loserNextGame: 14,
+      loserSlot: "1",
       player1PrevGame: "Winner of Game 10",
       player2PrevGame: "Winner of Game 11",
     },
 
     // ── Winners Final (round 3) ───────────────────────────────────────────
     // Game 13 (index 12): undefeated winner vs losers bracket survivor
-    //   Winner → Grand Final (slot 2) — waits for the grand final
-    //   Loser  → 'third' — wins 3rd place directly
+    //   Winner → Grand Final (slot 2)
+    //   Loser  → index 14 (Game 15, 3rd place match, slot 2)
     {
       game: 13,
       round: 3,
@@ -429,13 +429,36 @@ export function buildPlayoff8(members: IPlayoffPlayer[]): IPlayoffBracket {
       isComplete: false,
       winnerNextGame: 13,
       winnerSlot: "2",
-      loserNextGame: "third",
-      loserSlot: null,
+      loserNextGame: 14,
+      loserSlot: "2",
       player1PrevGame: "Winner of Game 9",
       player2PrevGame: "Winner of Game 12",
     },
 
-    // ── Grand Final (round 3) ─────────────────────────────────────────────
+    // ── 3rd Place Match (round 3) ─────────────────────────────────────────
+    // Game 15 (index 14): loser of G12 vs loser of G13
+    //   Winner → 'third' (3rd place)
+    //   Loser  → 4th place (eliminated)
+    {
+      game: 15,
+      round: 3,
+      bracket: "losers",
+      player1: null,
+      player2: null,
+      player1Score: null,
+      player2Score: null,
+      winnerId: null,
+      loserId: null,
+      isComplete: false,
+      winnerNextGame: "third",
+      winnerSlot: null,
+      loserNextGame: null,
+      loserSlot: null,
+      player1PrevGame: "Loser of Game 12",
+      player2PrevGame: "Loser of Game 13",
+    },
+
+    // ── Grand Final (round 3 — merged into Finals column) ────────────────
     // Game 14 (index 13): winners bracket champion vs losers bracket champion
     //   Winner → 'champion'  (1st place)
     //   Loser  → 'runnerUp'  (2nd place)
@@ -1049,13 +1072,13 @@ export function buildPlayoff16(members: IPlayoffPlayer[]): IPlayoffBracket {
       player2PrevGame: "Loser G28",
     },
 
-    // ── Grand Final (round 4) ─────────────────────────────────────────────
+    // ── Grand Final (round 5) ─────────────────────────────────────────────
     // Game 30 (index 29): both semi-final winners
     //   Winner → 'champion'  (1st place)
     //   Loser  → 'runnerUp'  (2nd place)
     {
       game: 30,
-      round: 4,
+      round: 5,
       bracket: "final",
       player1: null,
       player2: null,
@@ -1078,7 +1101,7 @@ export function buildPlayoff16(members: IPlayoffPlayer[]): IPlayoffBracket {
     champion: null,
     runnerUp: null,
     thirdPlace: null,
-    totalRounds: 5,
+    totalRounds: 6,
   };
 }
 
