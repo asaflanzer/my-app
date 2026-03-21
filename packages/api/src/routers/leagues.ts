@@ -344,21 +344,18 @@ export const leagueRouter = router({
           const p1 = match.player1Id;
           const p2 = match.player2Id;
           if (!p1 || !p2 || !match.winnerId) continue;
-          const mixed = disabledSet.has(p1) !== disabledSet.has(p2);
-          const skipP1 = mixed && !disabledSet.has(p1);
-          const skipP2 = mixed && !disabledSet.has(p2);
-          if (!skipP1) {
-            const d = getDelta(p1);
-            d.games += 1;
-            if (match.winnerId === p1) { d.wins += 1; d.score += match.score1 - match.score2; }
-            else { d.losses += 1; d.score += match.score1 - match.score2; }
-          }
-          if (!skipP2) {
-            const d = getDelta(p2);
-            d.games += 1;
-            if (match.winnerId === p2) { d.wins += 1; d.score += match.score2 - match.score1; }
-            else { d.losses += 1; d.score += match.score2 - match.score1; }
-          }
+          // Mixed match (one active, one inactive) → skip both players
+          if (disabledSet.has(p1) !== disabledSet.has(p2)) continue;
+
+          const d1 = getDelta(p1);
+          d1.games += 1;
+          if (match.winnerId === p1) { d1.wins += 1; d1.score += match.score1 - match.score2; }
+          else { d1.losses += 1; d1.score += match.score1 - match.score2; }
+
+          const d2 = getDelta(p2);
+          d2.games += 1;
+          if (match.winnerId === p2) { d2.wins += 1; d2.score += match.score2 - match.score1; }
+          else { d2.losses += 1; d2.score += match.score2 - match.score1; }
         }
 
         for (const [memberId, delta] of deltas) {
