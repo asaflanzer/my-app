@@ -28,6 +28,7 @@ import { HostsAdminPage } from "@/pages/HostsAdminPage";
 import { MyLeaguesPage } from "@/pages/MyLeaguesPage";
 import { HistoryPage } from "@/pages/HistoryPage";
 import { LeagueHistoryPage } from "@/pages/LeagueHistoryPage";
+import { LeaguePlayoffsPage } from "@/pages/LeaguePlayoffsPage";
 
 const PageTransitionLoader = () => {
   const location = useLocation();
@@ -99,6 +100,10 @@ export default function App() {
               <Route
                 path="/league/:leagueId/meeting/:meetingId"
                 element={<MeetingDetailPage />}
+              />
+              <Route
+                path="/league/:leagueId/playoffs"
+                element={<LeaguePlayoffsPage />}
               />
               <Route element={<AdminRoute />}>
                 <Route

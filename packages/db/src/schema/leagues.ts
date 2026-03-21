@@ -1,4 +1,4 @@
-import { pgTable, text, integer, boolean, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, boolean, timestamp, uniqueIndex, json } from "drizzle-orm/pg-core";
 import { users } from "./users";
 
 export const leagues = pgTable("leagues", {
@@ -14,6 +14,11 @@ export const leagues = pgTable("leagues", {
   playoffMeetings: integer("playoff_meetings").notNull().default(2),
   maxPlayers: integer("max_players").notNull().default(32),
   isPublic: boolean("is_public").notNull().default(false),
+  // Playoff settings — configured by the host before the bracket is initialised
+  playoffRaceTo: integer("playoff_race_to").notNull().default(3),           // 3 or 7
+  playoffGameType: text("playoff_game_type").notNull().default("8-ball"),   // '8-ball' | '9-ball'
+  // Full bracket state stored as JSON; null until host calls initBracket
+  playoffBracket: json("playoff_bracket"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

@@ -6,6 +6,7 @@ import { leagueRouter } from "./leagues.js";
 import { meetingRouter } from "./meetings.js";
 import { contactRouter } from "./contact.js";
 import { hostsRouter } from "./hosts.js";
+import { playoffsRouter } from "./playoffs.js";
 
 export const appRouter = router({
   auth: authRouter,
@@ -15,6 +16,7 @@ export const appRouter = router({
   meeting: meetingRouter,
   contact: contactRouter,
   hosts: hostsRouter,
+  playoffs: playoffsRouter,
 });
 
 export type AppRouter = typeof appRouter;

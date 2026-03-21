@@ -1,13 +1,22 @@
 import { useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useLeagueContext } from "@/contexts/LeagueContext";
 import { useAdminContext } from "@/contexts/AdminContext";
 import { Button } from "@/components/ui/button";
+import { trpc } from "@/lib/trpc";
 
 export const AdminPlayoffsSection = () => {
   const { league } = useLeagueContext();
   const { activatedPlayoffs, canActivatePlayoff } = useAdminContext();
+  const { leagueId } = useParams<{ leagueId: string }>();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(true);
+
+  const { mutate: previewBracket, isPending: previewing } =
+    trpc.playoffs.previewBracket.useMutation({
+      onSuccess: () => navigate(`/league/${leagueId}/playoffs`),
+    });
 
   if (!league) return null;
 
@@ -36,8 +45,18 @@ export const AdminPlayoffsSection = () => {
           )}
         </div>
       </button>
+
       {open && (
-        <>
+        <div className="space-y-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full text-xs"
+            disabled={previewing}
+            onClick={() => previewBracket({ leagueId: leagueId ?? "" })}
+          >
+            Preview Playoffs
+          </Button>
           <Button
             disabled={!canActivatePlayoff}
             size="sm"
@@ -45,10 +64,7 @@ export const AdminPlayoffsSection = () => {
           >
             Activate Playoff #1
           </Button>
-          <p className="text-xs text-muted-foreground">
-            Playoff format coming soon.
-          </p>
-        </>
+        </div>
       )}
     </section>
   );
