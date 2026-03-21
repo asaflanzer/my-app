@@ -103,9 +103,9 @@ export function useMeetingActions({
     updateScore.mutate({ tableId, player, delta, raceTo });
   };
 
-  const handleSubmitScore = (tableId: string) => {
+  const handleSubmitScore = (tableId: string, score1: number, score2: number) => {
     if (!activeMeeting || !leagueId) return;
-    submitScore.mutate({ tableId, meetingId: activeMeeting.id, leagueId, raceTo });
+    submitScore.mutate({ tableId, meetingId: activeMeeting.id, leagueId, raceTo, score1, score2 });
   };
 
   const handleTakeBreak = () => {

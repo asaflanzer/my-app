@@ -409,6 +409,8 @@ export const meetingRouter = router({
         meetingId: z.string(),
         leagueId: z.string(),
         raceTo: z.number().int().positive(),
+        score1: z.number().int().min(0),
+        score2: z.number().int().min(0),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -424,7 +426,7 @@ export const meetingRouter = router({
         throw new TRPCError({ code: "BAD_REQUEST", message: "Table must have two players" });
       }
 
-      const { score1, score2 } = table;
+      const { score1, score2 } = input;
       if (score1 !== input.raceTo && score2 !== input.raceTo) {
         throw new TRPCError({ code: "BAD_REQUEST", message: `One player must have reached ${input.raceTo}` });
       }
@@ -439,10 +441,10 @@ export const meetingRouter = router({
         .where(eq(meetings.id, input.meetingId))
         .limit(1);
 
-      // Mark table as done
+      // Mark table as done with confirmed scores
       await ctx.db
         .update(matchTables)
-        .set({ status: "done", winnerId, updatedAt: now })
+        .set({ status: "done", score1, score2, winnerId, updatedAt: now })
         .where(eq(matchTables.id, input.tableId));
 
       // Record match history and apply stats immediately

@@ -400,7 +400,7 @@ export const LeagueHero = () => {
                 )}
 
                 <Button
-                  onClick={() => handleSubmitScore(modal)}
+                  onClick={() => handleSubmitScore(modal, sv.s1, sv.s2)}
                   disabled={!valid || submitScore.isPending}
                   className={cn(
                     "w-full h-auto py-[15px] text-base mt-1.5 rounded-[10px]",
