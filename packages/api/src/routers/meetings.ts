@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { router, protectedProcedure } from "../trpc.js";
 import { leagues, leagueMembers, leagueTables, meetings, meetingPlayers, matchTables, matchHistory, users } from "@my-app/db";
-import { eq, and, sql, desc, inArray, asc, or } from "@my-app/db";
+import { eq, and, sql, desc, inArray, asc, or, isNull } from "@my-app/db";
 import { TRPCError } from "@trpc/server";
 
 function secureShuffleArray<T>(array: T[]): T[] {
@@ -237,6 +237,96 @@ export const meetingRouter = router({
         .where(and(eq(meetings.id, input.meetingId), eq(meetings.leagueId, input.leagueId)));
     }),
 
+  cleanupDuplicates: protectedProcedure
+    .input(z.object({ leagueId: z.string(), meetingId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      await assertLeagueHost(ctx, input.leagueId);
+
+      // Fetch all done match tables for this meeting
+      const doneTables = await ctx.db
+        .select()
+        .from(matchTables)
+        .where(and(eq(matchTables.meetingId, input.meetingId), eq(matchTables.status, "done")));
+
+      // Group by normalized pair (sorted player IDs), keep newest per pair
+      const pairMap = new Map<string, typeof doneTables[number]>();
+      const toDelete: typeof doneTables = [];
+
+      for (const table of doneTables) {
+        if (!table.player1Id || !table.player2Id) continue;
+        const key = [table.player1Id, table.player2Id].sort().join("|");
+        const existing = pairMap.get(key);
+        if (!existing || table.createdAt > existing.createdAt) {
+          if (existing) toDelete.push(existing);
+          pairMap.set(key, table);
+        } else {
+          toDelete.push(table);
+        }
+      }
+
+      if (toDelete.length === 0) return { deleted: 0 };
+
+      // For each stale table, reverse leagueMembers stats and delete matchHistory
+      for (const table of toDelete) {
+        const [history] = await ctx.db
+          .select()
+          .from(matchHistory)
+          .where(and(
+            eq(matchHistory.meetingId, input.meetingId),
+            eq(matchHistory.player1Id, table.player1Id!),
+            eq(matchHistory.player2Id, table.player2Id!),
+          ))
+          .limit(1);
+
+        if (history?.winnerId) {
+          const loserId = history.winnerId === history.player1Id
+            ? history.player2Id
+            : history.player1Id;
+          const winnerScoreDelta = history.winnerId === history.player1Id
+            ? history.score1 - history.score2
+            : history.score2 - history.score1;
+
+          await ctx.db
+            .update(leagueMembers)
+            .set({
+              wins: sql`${leagueMembers.wins} - 1`,
+              games: sql`${leagueMembers.games} - 1`,
+              score: sql`${leagueMembers.score} - ${winnerScoreDelta}`,
+            })
+            .where(eq(leagueMembers.id, history.winnerId));
+
+          if (loserId) {
+            await ctx.db
+              .update(leagueMembers)
+              .set({
+                losses: sql`${leagueMembers.losses} - 1`,
+                games: sql`${leagueMembers.games} - 1`,
+                score: sql`${leagueMembers.score} + ${winnerScoreDelta}`,
+              })
+              .where(eq(leagueMembers.id, loserId));
+          }
+
+          await ctx.db
+            .delete(matchHistory)
+            .where(eq(matchHistory.id, history.id));
+        }
+
+        await ctx.db
+          .delete(matchTables)
+          .where(eq(matchTables.id, table.id));
+      }
+
+      // Also delete rows with NULL player1 or player2 (unassigned idle tables)
+      await ctx.db
+        .delete(matchTables)
+        .where(and(
+          eq(matchTables.meetingId, input.meetingId),
+          or(isNull(matchTables.player1Id), isNull(matchTables.player2Id)),
+        ));
+
+      return { deleted: toDelete.length };
+    }),
+
   togglePause: protectedProcedure
     .input(z.object({ leagueId: z.string(), meetingId: z.string() }))
     .mutation(async ({ ctx, input }) => {
@@ -343,11 +433,27 @@ export const meetingRouter = router({
         throw new TRPCError({ code: "BAD_REQUEST", message: "No idle tables available" });
       }
 
-      // Shuffle ready players
-      const shuffled = secureShuffleArray(readyPlayers);
-      const pairs: Array<[string, string]> = [];
-      for (let i = 0; i + 1 < shuffled.length; i += 2) {
-        pairs.push([shuffled[i]!.memberId, shuffled[i + 1]!.memberId]);
+      // Build set of already-played pairs this meeting to avoid rematches
+      const meetingHistory = await ctx.db
+        .select()
+        .from(matchHistory)
+        .where(eq(matchHistory.meetingId, input.meetingId));
+      const playedPairs = new Set<string>();
+      for (const m of meetingHistory) {
+        if (m.player1Id && m.player2Id)
+          playedPairs.add([m.player1Id, m.player2Id].sort().join("|"));
+      }
+
+      // Shuffle ready players, retrying up to 10 times to avoid rematches
+      let pairs: Array<[string, string]> = [];
+      for (let attempt = 0; attempt < 10; attempt++) {
+        const shuffled = secureShuffleArray(readyPlayers);
+        const candidate: Array<[string, string]> = [];
+        for (let i = 0; i + 1 < shuffled.length; i += 2)
+          candidate.push([shuffled[i]!.memberId, shuffled[i + 1]!.memberId]);
+        const hasRematch = candidate.some(([a, b]) =>
+          playedPairs.has([a, b].sort().join("|")));
+        if (!hasRematch || attempt === 9) { pairs = candidate; break; }
       }
 
       // Assign pairs to idle tables
