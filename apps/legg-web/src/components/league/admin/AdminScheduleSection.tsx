@@ -42,6 +42,7 @@ export const AdminScheduleSection = () => {
                 startTime: e.target.value,
               })
             }
+            className="w-full h-10"
           />
         </div>
       </div>
