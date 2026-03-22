@@ -26,8 +26,6 @@ function getRoundLabel(roundIndex: number, totalRounds: number): string {
       return "Finals";
     case 1:
       return "Semi-Finals";
-    case 2:
-      return "Quarter-Finals";
     default:
       return `Round ${roundIndex + 1}`;
   }
