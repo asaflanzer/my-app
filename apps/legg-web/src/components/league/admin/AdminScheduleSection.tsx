@@ -42,7 +42,7 @@ export const AdminScheduleSection = () => {
                 startTime: e.target.value,
               })
             }
-            className="w-30 h-9 py-0 [&::-webkit-calendar-picker-indicator]:hidden"
+            className="w-30 h-9.5 py-0 [&::-webkit-calendar-picker-indicator]:hidden"
           />
         </div>
       </div>
