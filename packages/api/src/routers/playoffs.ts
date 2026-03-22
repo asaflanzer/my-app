@@ -105,10 +105,10 @@ function buildPlayoff8(p: IPlayoffPlayer[]): IPlayoffBracket {
     mk(11,1,'losers',  null, null,11,'2', null,null,'Winner G8','Loser G5'),
     mk(12,2,'losers',  null, null,12,'2', 14,'1','Winner G10','Winner G11'),
     mk(13,3,'winners', null, null,13,'2', 14,'2','Winner G9','Winner G12'),
-    mk(14,4,'final',   null, null,'champion',null,'runnerUp',null,'Winner G13','TBD'),
-    mk(15,4,'losers',  null, null,'third',null,null,null,'Loser G12','Loser G13'),
+    mk(14,3,'final',   null, null,'champion',null,'runnerUp',null,'Winner G13','TBD'),
+    mk(15,3,'losers',  null, null,'third',null,null,null,'Loser G12','Loser G13'),
   ];
-  return { games, champion:null, runnerUp:null, thirdPlace:null, totalRounds:5 };
+  return { games, champion:null, runnerUp:null, thirdPlace:null, totalRounds:4 };
 }
 
 function buildPlayoff16(p: IPlayoffPlayer[]): IPlayoffBracket {

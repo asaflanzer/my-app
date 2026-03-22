@@ -435,13 +435,13 @@ export function buildPlayoff8(members: IPlayoffPlayer[]): IPlayoffBracket {
       player2PrevGame: "Winner of Game 12",
     },
 
-    // ── 3rd Place Match (round 4 — Finals column) ────────────────────────
+    // ── 3rd Place Match (round 3 — Finals column) ────────────────────────
     // Game 15 (index 14): loser of G12 vs loser of G13
     //   Winner → 'third' (3rd place)
     //   Loser  → 4th place (eliminated)
     {
       game: 15,
-      round: 4,
+      round: 3,
       bracket: "losers",
       player1: null,
       player2: null,
@@ -458,13 +458,13 @@ export function buildPlayoff8(members: IPlayoffPlayer[]): IPlayoffBracket {
       player2PrevGame: "Loser of Game 13",
     },
 
-    // ── Grand Final (round 4 — Finals column) ────────────────────────────
+    // ── Grand Final (round 3 — Finals column) ────────────────────────────
     // Game 14 (index 13): winners bracket champion vs losers bracket champion
     //   Winner → 'champion'  (1st place)
     //   Loser  → 'runnerUp'  (2nd place)
     {
       game: 14,
-      round: 4,
+      round: 3,
       bracket: "final",
       player1: null,
       player2: null,
@@ -487,7 +487,7 @@ export function buildPlayoff8(members: IPlayoffPlayer[]): IPlayoffBracket {
     champion: null,
     runnerUp: null,
     thirdPlace: null,
-    totalRounds: 5,
+    totalRounds: 4,
   };
 }
 
