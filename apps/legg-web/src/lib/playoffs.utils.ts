@@ -138,8 +138,8 @@ function toPlayoffPlayer(p: IEnrichedPlayer): IPlayoffPlayer {
  * ── CAROUSEL ROUNDS ─────────────────────────────────────────────────────────
  *
  *   round 0: Games  1– 4  (Round 1 — initial seeded matchups)
- *   round 1: Games  5– 8  (Round 2 — Winners R2 + Losers R1)
- *   round 2: Games  9–11  (Quarter-Finals — Winners SF + Losers R2)
+ *   round 1: Games  5– 8  (Round 2 — Winners QF + Losers R1)
+ *   round 2: Games  9–11  (Round 3 — Winners SF + Losers R2)
  *   round 3: Games 12–13  (Semi-Finals — Losers SF + Winners Final)
  *   round 4: Games 14–15  (Finals — 1st/2nd place + 3rd/4th place)
  */
