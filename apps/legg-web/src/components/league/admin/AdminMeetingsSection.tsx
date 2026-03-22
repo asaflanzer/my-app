@@ -131,7 +131,7 @@ export const AdminMeetingsSection = () => {
                   >
                     Meeting #{slot.meetingNumber}
                   </span>
-                  <div className="text-xs text-muted-foreground">
+                  <div className="text-sm text-neutral-500">
                     {editingDateMeetingId === editingId ? (
                       <div className="flex items-center gap-1">
                         <input
@@ -182,14 +182,15 @@ export const AdminMeetingsSection = () => {
                                 : "—"}
                         </span>
                         {!isCompleted && (
-                          <button
-                            type="button"
-                            className="opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100 transition-opacity text-muted-foreground hover:text-foreground"
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100 transition-opacity"
                             onClick={() => startEditDate(slot, meeting ?? null)}
                             aria-label="Edit date"
                           >
-                            <Pencil className="h-3 w-3" />
-                          </button>
+                            <Pencil className="h-2 w-2" />
+                          </Button>
                         )}
                       </div>
                     )}

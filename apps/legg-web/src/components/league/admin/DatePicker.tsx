@@ -32,8 +32,15 @@ export const DatePicker = ({ label, value, onChange }: IDatePickerProps) => {
               !selected && "text-muted-foreground",
             )}
           >
-            <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
-            <span className="truncate">
+            <CalendarIcon
+              className={cn(
+                "mr-2 h-4 w-4 shrink-0",
+                selected ? "text-foreground" : "text-muted-foreground",
+              )}
+            />
+            <span
+              className={`truncate ${selected ? "text-foreground" : "text-muted-foreground"}`}
+            >
               {selected ? format(selected, "PPP") : "Pick a date"}
             </span>
           </Button>

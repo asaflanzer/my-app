@@ -1,4 +1,4 @@
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { useLeagueContext } from "@/contexts/LeagueContext";
 import {
   Breadcrumb,
@@ -12,8 +12,11 @@ import { Button } from "@/components/ui/button";
 
 export const LeagueGameHeader = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { leagueId } = useParams<{ leagueId: string }>();
   const { league, isAdmin } = useLeagueContext();
+
+  const isPlayoffPage = location.pathname.endsWith("/playoffs");
 
   return (
     <header className="bg-card border-b border-card-border px-[15px] py-[9px] sticky top-0 z-50 flex items-center justify-between">
@@ -26,8 +29,24 @@ export const LeagueGameHeader = () => {
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
-            <BreadcrumbPage>{league?.name ?? "League"}</BreadcrumbPage>
+            {isPlayoffPage ? (
+              <BreadcrumbLink asChild>
+                <button onClick={() => navigate(`/league/${leagueId}`)}>
+                  {league?.name ?? "League"}
+                </button>
+              </BreadcrumbLink>
+            ) : (
+              <BreadcrumbPage>{league?.name ?? "League"}</BreadcrumbPage>
+            )}
           </BreadcrumbItem>
+          {isPlayoffPage && (
+            <>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage>Playoffs</BreadcrumbPage>
+              </BreadcrumbItem>
+            </>
+          )}
         </BreadcrumbList>
       </Breadcrumb>
       {isAdmin && (

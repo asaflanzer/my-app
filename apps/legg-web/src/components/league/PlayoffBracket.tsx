@@ -170,7 +170,7 @@ export const PlayoffBracket = ({
   return (
     <div className="py-4 space-y-4">
       <h2 className="px-4 text-sm font-semibold uppercase tracking-widest text-muted-foreground">
-        Playoff Bracket
+        Playoff Brackets
       </h2>
 
       {/* Bracket — horizontal scroll */}
@@ -216,7 +216,10 @@ export const PlayoffBracket = ({
               </div>
             ))}
             {/* Podium label */}
-            <div className="flex items-center shrink-0" style={{ width: CARD_W }}>
+            <div
+              className="flex items-center shrink-0"
+              style={{ width: CARD_W }}
+            >
               <span className="text-[10px] font-bold uppercase tracking-widest text-foreground">
                 Podium
               </span>
@@ -275,9 +278,21 @@ export const PlayoffBracket = ({
               >
                 {(
                   [
-                    { emoji: "🥇", label: "1st Place", player: bracket.champion },
-                    { emoji: "🥈", label: "2nd Place", player: bracket.runnerUp },
-                    { emoji: "🥉", label: "3rd Place", player: bracket.thirdPlace },
+                    {
+                      emoji: "🥇",
+                      label: "1st Place",
+                      player: bracket.champion,
+                    },
+                    {
+                      emoji: "🥈",
+                      label: "2nd Place",
+                      player: bracket.runnerUp,
+                    },
+                    {
+                      emoji: "🥉",
+                      label: "3rd Place",
+                      player: bracket.thirdPlace,
+                    },
                   ] as const
                 ).map(({ emoji, label, player }) => (
                   <div
@@ -286,7 +301,9 @@ export const PlayoffBracket = ({
                     style={{ minHeight: CARD_H }}
                   >
                     <span className="text-xl leading-none">{emoji}</span>
-                    <span className="text-[9px] text-muted-foreground">{label}</span>
+                    <span className="text-[9px] text-muted-foreground">
+                      {label}
+                    </span>
                     <span className="text-[11px] font-semibold text-center leading-tight w-full truncate">
                       {player?.name ?? "TBD"}
                     </span>
