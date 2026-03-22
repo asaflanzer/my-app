@@ -101,14 +101,14 @@ function buildPlayoff8(p: IPlayoffPlayer[]): IPlayoffBracket {
     mk(7, 1,'losers',  null, null, 9,'1', null,null, 'Loser G1','Loser G2'),
     mk(8, 1,'losers',  null, null,10,'1', null,null, 'Loser G3','Loser G4'),
     mk(9, 2,'winners', null, null,12,'1', 11,'2', 'Winner G5','Winner G6'),
-    mk(10,1,'losers',  null, null,11,'1', null,null,'Winner G7','Loser G6'),
-    mk(11,1,'losers',  null, null,11,'2', null,null,'Winner G8','Loser G5'),
-    mk(12,2,'losers',  null, null,12,'2', 14,'1','Winner G10','Winner G11'),
+    mk(10,2,'losers',  null, null,11,'1', null,null,'Winner G7','Loser G6'),
+    mk(11,2,'losers',  null, null,11,'2', null,null,'Winner G8','Loser G5'),
+    mk(12,3,'losers',  null, null,12,'2', 14,'1','Winner G10','Winner G11'),
     mk(13,3,'winners', null, null,13,'2', 14,'2','Winner G9','Winner G12'),
-    mk(14,3,'final',   null, null,'champion',null,'runnerUp',null,'Winner G13','TBD'),
-    mk(15,3,'losers',  null, null,'third',null,null,null,'Loser G12','Loser G13'),
+    mk(14,4,'final',   null, null,'champion',null,'runnerUp',null,'Winner G13','TBD'),
+    mk(15,4,'losers',  null, null,'third',null,null,null,'Loser G12','Loser G13'),
   ];
-  return { games, champion:null, runnerUp:null, thirdPlace:null, totalRounds:4 };
+  return { games, champion:null, runnerUp:null, thirdPlace:null, totalRounds:5 };
 }
 
 function buildPlayoff16(p: IPlayoffPlayer[]): IPlayoffBracket {

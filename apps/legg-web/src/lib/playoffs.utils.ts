@@ -137,10 +137,11 @@ function toPlayoffPlayer(p: IEnrichedPlayer): IPlayoffPlayer {
  *
  * ── CAROUSEL ROUNDS ─────────────────────────────────────────────────────────
  *
- *   round 0: Games  1– 4  (Winners R1 — initial seeded matchups)
- *   round 1: Games  5– 8  (Winners R2 + Losers R1)
- *   round 2: Games  9–12  (Winners QF + Losers R2/R3)
- *   round 3: Games 13–14  (Winners Final + Grand Final)
+ *   round 0: Games  1– 4  (Round 1 — initial seeded matchups)
+ *   round 1: Games  5– 8  (Round 2 — Winners R2 + Losers R1)
+ *   round 2: Games  9–11  (Quarter-Finals — Winners SF + Losers R2)
+ *   round 3: Games 12–13  (Semi-Finals — Losers SF + Winners Final)
+ *   round 4: Games 14–15  (Finals — 1st/2nd place + 3rd/4th place)
  */
 export function buildPlayoff8(members: IPlayoffPlayer[]): IPlayoffBracket {
   const p = members;
@@ -351,7 +352,7 @@ export function buildPlayoff8(members: IPlayoffPlayer[]): IPlayoffBracket {
     //   Loser  → ELIMINATED
     {
       game: 10,
-      round: 1,
+      round: 2,
       bracket: "losers",
       player1: null,
       player2: null,
@@ -372,7 +373,7 @@ export function buildPlayoff8(members: IPlayoffPlayer[]): IPlayoffBracket {
     //   Loser  → ELIMINATED
     {
       game: 11,
-      round: 1,
+      round: 2,
       bracket: "losers",
       player1: null,
       player2: null,
@@ -395,7 +396,7 @@ export function buildPlayoff8(members: IPlayoffPlayer[]): IPlayoffBracket {
     //   Loser  → index 14 (Game 15, 3rd place match, slot 1)
     {
       game: 12,
-      round: 2,
+      round: 3,
       bracket: "losers",
       player1: null,
       player2: null,
@@ -441,7 +442,7 @@ export function buildPlayoff8(members: IPlayoffPlayer[]): IPlayoffBracket {
     //   Loser  → 4th place (eliminated)
     {
       game: 15,
-      round: 3,
+      round: 4,
       bracket: "losers",
       player1: null,
       player2: null,
@@ -464,7 +465,7 @@ export function buildPlayoff8(members: IPlayoffPlayer[]): IPlayoffBracket {
     //   Loser  → 'runnerUp'  (2nd place)
     {
       game: 14,
-      round: 3,
+      round: 4,
       bracket: "final",
       player1: null,
       player2: null,
@@ -487,7 +488,7 @@ export function buildPlayoff8(members: IPlayoffPlayer[]): IPlayoffBracket {
     champion: null,
     runnerUp: null,
     thirdPlace: null,
-    totalRounds: 4,
+    totalRounds: 5,
   };
 }
 
