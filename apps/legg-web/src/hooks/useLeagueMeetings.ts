@@ -45,7 +45,7 @@ export function useLeagueMeetings(league: LeagueData | undefined) {
     onSettled: () => decrementLoading(),
     onSuccess: () => {
       void utils.meeting.list.invalidate();
-      toast("Schedule saved!");
+      toast.success("Schedule saved!");
     },
     onError: (e) => toast.error(e.message),
   });
@@ -55,8 +55,13 @@ export function useLeagueMeetings(league: LeagueData | undefined) {
     onSettled: () => decrementLoading(),
     onSuccess: () => {
       void utils.meeting.list.invalidate();
-      toast("Meeting activated!");
-      setTimeout(() => navigate(`/league/${leagueId}`), 1000);
+      toast.success("Meeting activated", {
+        duration: 5000,
+        action: {
+          label: "View meeting",
+          onClick: () => navigate(`/league/${leagueId}`),
+        },
+      });
     },
     onError: (e) => toast.error(e.message),
   });
@@ -74,7 +79,7 @@ export function useLeagueMeetings(league: LeagueData | undefined) {
     onSuccess: () => {
       void utils.meeting.list.invalidate();
       setConfirmComplete(null);
-      toast("Meeting completed!");
+      toast.success("Meeting completed!");
     },
     onError: (e) => toast.error(e.message),
   });
@@ -104,8 +109,7 @@ export function useLeagueMeetings(league: LeagueData | undefined) {
   const activatedMeetings = regularMeetingsList.length;
 
   const activatedPlayoffs = useMemo(
-    () =>
-      (meetingList.data ?? []).filter((m) => m.status === "playoff").length,
+    () => (meetingList.data ?? []).filter((m) => m.status === "playoff").length,
     [meetingList.data],
   );
 
@@ -123,8 +127,7 @@ export function useLeagueMeetings(league: LeagueData | undefined) {
   );
 
   const currentSlotIndex = useMemo(
-    () =>
-      allMeetingSlots.findIndex((s) => !s.data || s.data.status !== "done"),
+    () => allMeetingSlots.findIndex((s) => !s.data || s.data.status !== "done"),
     [allMeetingSlots],
   );
 
@@ -148,10 +151,7 @@ export function useLeagueMeetings(league: LeagueData | undefined) {
       : (pendingDates.get(slot.meetingNumber) ??
         (league?.startDate
           ? format(
-              addDays(
-                new Date(league.startDate),
-                (slot.meetingNumber - 1) * 7,
-              ),
+              addDays(new Date(league.startDate), (slot.meetingNumber - 1) * 7),
               "yyyy-MM-dd",
             )
           : format(new Date(), "yyyy-MM-dd")));

@@ -114,23 +114,25 @@ export const AdminMeetingsSection = () => {
                 )}
               >
                 {/* Left: meeting label + date */}
-                <div className="flex flex-col gap-0.5 min-w-0">
-                  <span
+                <div className="flex flex-col items-start gap-0.5 min-w-0">
+                  <Button
+                    variant="link"
+                    size="xs"
                     className={cn(
-                      "text-sm whitespace-nowrap",
-                      isCurrent
-                        ? "font-semibold"
-                        : "font-medium text-muted-foreground",
-                      meeting &&
-                        "cursor-pointer hover:underline hover:text-foreground",
+                      "text-xs whitespace-nowrap p-0 m-0 gap-0",
+                      isCurrent && "text-secondary",
                     )}
                     onClick={() =>
                       meeting &&
-                      navigate(`/league/${leagueId}/meeting/${meeting.id}`)
+                      navigate(
+                        isCompleted
+                          ? `/league/${leagueId}/meeting/${meeting.id}`
+                          : `/league/${leagueId}`,
+                      )
                     }
                   >
-                    Meeting #{slot.meetingNumber}
-                  </span>
+                    Meeting #{slot.meetingNumber}{" "}
+                  </Button>
                   <div className="text-sm text-neutral-500">
                     {editingDateMeetingId === editingId ? (
                       <div className="flex items-center gap-1">
@@ -203,7 +205,7 @@ export const AdminMeetingsSection = () => {
                     className={cn(
                       "text-xs font-medium",
                       status === "active"
-                        ? "text-primary"
+                        ? "text-secondary"
                         : "text-muted-foreground",
                     )}
                   >
