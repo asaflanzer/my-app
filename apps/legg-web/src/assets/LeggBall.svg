@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-label="Emerald L ball icon">
+  <defs>
+    <radialGradient id="emeraldBall" cx="35%" cy="30%" r="65%">
+      <!-- emerald-400 base with shading -->
+      <stop offset="0%" stop-color="#6ee7b7"/>
+      <stop offset="40%" stop-color="#34d399"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Ball -->
+  <circle cx="128" cy="128" r="112" fill="url(#emeraldBall)"/>
+
+  <!-- Subtle highlight -->
+  <ellipse cx="90" cy="82" rx="28" ry="18"
+           fill="#ffffff" opacity="0.18"
+           transform="rotate(-20 90 82)"/>
+
+  <!-- White center circle -->
+  <circle cx="128" cy="128" r="42" fill="#ffffff"/>
+
+  <!-- Tilted "L" -->
+  <text x="128" y="144"
+        text-anchor="middle"
+        font-family="Arial, Helvetica, sans-serif"
+        font-size="64"
+        font-weight="700"
+        fill="#000000"
+        transform="rotate(-15 128 128)">L</text>
+</svg>
