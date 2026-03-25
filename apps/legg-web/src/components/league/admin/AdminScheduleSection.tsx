@@ -8,7 +8,8 @@ import { DatePicker } from "@/components/league/admin/DatePicker";
 
 export const AdminScheduleSection = () => {
   const { league } = useLeagueContext();
-  const { updateSettings, initializeMeetings, meetingList } = useAdminContext();
+  const { updateSettings, initializeMeetings, meetingList, initializeTables } =
+    useAdminContext();
 
   if (!league) return null;
 
@@ -19,7 +20,7 @@ export const AdminScheduleSection = () => {
   return (
     <section className="space-y-4">
       <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-        League Schedule
+        League Setup
       </h2>
       <div className="grid grid-cols-[3fr_2fr] gap-3">
         <DatePicker
@@ -52,8 +53,6 @@ export const AdminScheduleSection = () => {
             Meetings
           </Label>
           <Input
-            type="number"
-            min={1}
             defaultValue={league.regularMeetings}
             onBlur={(e) =>
               updateSettings.mutate({
@@ -69,8 +68,6 @@ export const AdminScheduleSection = () => {
             Playoff
           </Label>
           <Input
-            type="number"
-            min={1}
             defaultValue={league.playoffMeetings}
             onBlur={(e) =>
               updateSettings.mutate({
@@ -86,8 +83,6 @@ export const AdminScheduleSection = () => {
             Max players
           </Label>
           <Input
-            type="number"
-            min={1}
             defaultValue={league.maxPlayers}
             onBlur={(e) =>
               updateSettings.mutate({
@@ -99,13 +94,85 @@ export const AdminScheduleSection = () => {
           />
         </div>
       </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="flex flex-col gap-1.5">
+          <Label className="text-xs font-normal text-muted-foreground">
+            Number of Tables
+          </Label>
+          <Input
+            defaultValue={league.numberOfTables}
+            onBlur={(e) =>
+              updateSettings.mutate({
+                leagueId: league.id,
+                numberOfTables: Math.max(1, Number(e.target.value)),
+              })
+            }
+            className="w-full"
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label className="text-xs font-normal text-muted-foreground">
+            First Table Number
+          </Label>
+          <Input
+            defaultValue={league.firstTableNumber}
+            onBlur={(e) =>
+              updateSettings.mutate({
+                leagueId: league.id,
+                firstTableNumber: Math.max(1, Number(e.target.value)),
+              })
+            }
+            className="w-full"
+          />
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="flex flex-col gap-1.5">
+          <Label className="text-xs font-normal text-muted-foreground">
+            8-ball Race to
+          </Label>
+          <Input
+            key={league.raceTo8ball}
+            defaultValue={league.raceTo8ball}
+            onBlur={(e) =>
+              updateSettings.mutate({
+                leagueId: league.id,
+                raceTo8ball: Math.max(1, Number(e.target.value)),
+              })
+            }
+            className="w-full"
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label className="text-xs font-normal text-muted-foreground">
+            9-ball Race to
+          </Label>
+          <Input
+            key={league.raceTo9ball}
+            defaultValue={league.raceTo9ball}
+            onBlur={(e) =>
+              updateSettings.mutate({
+                leagueId: league.id,
+                raceTo9ball: Math.max(1, Number(e.target.value)),
+              })
+            }
+            className="w-full"
+          />
+        </div>
+      </div>
       {!hasStarted && (
         <div>
           <Button
-            onClick={() =>
-              league.id && initializeMeetings.mutate({ leagueId: league.id })
+            onClick={() => {
+              if (!league.id) return;
+              initializeMeetings.mutate({ leagueId: league.id });
+              initializeTables.mutate({ leagueId: league.id });
+            }}
+            disabled={
+              initializeMeetings.isPending ||
+              initializeTables.isPending ||
+              !league.startDate
             }
-            disabled={initializeMeetings.isPending || !league.startDate}
           >
             {initializeMeetings.isPending && (
               <Loader className="h-4 w-4 animate-spin mr-2" />

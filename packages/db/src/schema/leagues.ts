@@ -1,4 +1,12 @@
-import { pgTable, text, integer, boolean, timestamp, uniqueIndex, json } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  text,
+  integer,
+  boolean,
+  timestamp,
+  uniqueIndex,
+  json,
+} from "drizzle-orm/pg-core";
 import { users } from "./users";
 
 export const leagues = pgTable("leagues", {
@@ -13,10 +21,14 @@ export const leagues = pgTable("leagues", {
   regularMeetings: integer("regular_meetings").notNull().default(7),
   playoffMeetings: integer("playoff_meetings").notNull().default(2),
   maxPlayers: integer("max_players").notNull().default(32),
+  raceTo8ball: integer("race_to_8ball").notNull().default(3),
+  raceTo9ball: integer("race_to_9ball").notNull().default(7),
+  numberOfTables: integer("number_of_tables").notNull().default(15),
+  firstTableNumber: integer("first_table_number").notNull().default(10),
   isPublic: boolean("is_public").notNull().default(false),
   // Playoff settings — configured by the host before the bracket is initialised
-  playoffRaceTo: integer("playoff_race_to").notNull().default(3),           // 3 or 7
-  playoffGameType: text("playoff_game_type").notNull().default("8-ball"),   // '8-ball' | '9-ball'
+  playoffRaceTo: integer("playoff_race_to").notNull().default(3), // 3 or 7
+  playoffGameType: text("playoff_game_type").notNull().default("8-ball"), // '8-ball' | '9-ball'
   // Full bracket state stored as JSON; null until host calls initBracket
   playoffBracket: json("playoff_bracket"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -41,7 +53,9 @@ export const leagueMembers = pgTable(
     isQualified: boolean("is_qualified").notNull().default(false),
     joinedAt: timestamp("joined_at").defaultNow().notNull(),
   },
-  (t) => [uniqueIndex("league_members_league_user_idx").on(t.leagueId, t.userId)],
+  (t) => [
+    uniqueIndex("league_members_league_user_idx").on(t.leagueId, t.userId),
+  ],
 );
 
 export const leagueTables = pgTable(
@@ -53,7 +67,9 @@ export const leagueTables = pgTable(
       .references(() => leagues.id, { onDelete: "cascade" }),
     tableNumber: integer("table_number").notNull(),
   },
-  (t) => [uniqueIndex("league_tables_league_table_idx").on(t.leagueId, t.tableNumber)],
+  (t) => [
+    uniqueIndex("league_tables_league_table_idx").on(t.leagueId, t.tableNumber),
+  ],
 );
 
 export type League = typeof leagues.$inferSelect;

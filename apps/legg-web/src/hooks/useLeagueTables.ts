@@ -18,6 +18,13 @@ export function useLeagueTables() {
     { enabled: !!leagueId },
   );
 
+  const initializeTables = trpc.league.initializeTables.useMutation({
+    onMutate: () => incrementLoading(),
+    onSettled: () => decrementLoading(),
+    onSuccess: () => void utils.league.listTables.invalidate(),
+    onError: (e) => toast.error(e.message),
+  });
+
   const addTable = trpc.league.addTable.useMutation({
     onMutate: () => incrementLoading(),
     onSettled: () => decrementLoading(),
@@ -64,6 +71,7 @@ export function useLeagueTables() {
 
   return {
     leagueTablesList,
+    initializeTables,
     newTableNumber,
     setNewTableNumber,
     editingTableId,

@@ -39,6 +39,10 @@ export const leagueRouter = router({
         regularMeetings: z.number().int().positive().default(7),
         playoffMeetings: z.number().int().positive().default(2),
         maxPlayers: z.number().int().positive().default(32),
+        raceTo8ball: z.number().int().positive().default(3),
+        raceTo9ball: z.number().int().positive().default(7),
+        numberOfTables: z.number().int().positive().default(15),
+        firstTableNumber: z.number().int().positive().default(10),
         isPublic: z.boolean().default(false),
       }),
     )
@@ -69,17 +73,21 @@ export const leagueRouter = router({
         regularMeetings: input.regularMeetings,
         playoffMeetings: input.playoffMeetings,
         maxPlayers: input.maxPlayers,
+        raceTo8ball: input.raceTo8ball,
+        raceTo9ball: input.raceTo9ball,
+        numberOfTables: input.numberOfTables,
+        firstTableNumber: input.firstTableNumber,
         isPublic: input.isPublic,
         createdAt: now,
         updatedAt: now,
       });
 
-      // Seed 15 default tables (10–24)
+      // Seed tables based on numberOfTables and firstTableNumber
       await ctx.db.insert(leagueTables).values(
-        Array.from({ length: 15 }, (_, i) => ({
+        Array.from({ length: input.numberOfTables }, (_, i) => ({
           id: crypto.randomUUID(),
           leagueId,
-          tableNumber: i + 10,
+          tableNumber: i + input.firstTableNumber,
         })),
       );
 
@@ -185,6 +193,10 @@ export const leagueRouter = router({
         regularMeetings: z.number().int().positive().optional(),
         playoffMeetings: z.number().int().positive().optional(),
         maxPlayers: z.number().int().positive().optional(),
+        raceTo8ball: z.number().int().positive().optional(),
+        raceTo9ball: z.number().int().positive().optional(),
+        numberOfTables: z.number().int().positive().optional(),
+        firstTableNumber: z.number().int().positive().optional(),
         isPublic: z.boolean().optional(),
       }),
     )
@@ -481,7 +493,7 @@ export const leagueRouter = router({
   listTables: protectedProcedure
     .input(z.object({ leagueId: z.string() }))
     .query(async ({ ctx, input }) => {
-      await assertLeagueHost(ctx, input.leagueId);
+      const league = await assertLeagueHost(ctx, input.leagueId);
       const existing = await ctx.db
         .select()
         .from(leagueTables)
@@ -490,11 +502,11 @@ export const leagueRouter = router({
 
       if (existing.length > 0) return existing;
 
-      // Auto-seed 15 default tables (10–24) if none exist
-      const rows = Array.from({ length: 15 }, (_, i) => ({
+      // Auto-seed tables using league's numberOfTables and firstTableNumber
+      const rows = Array.from({ length: league.numberOfTables }, (_, i) => ({
         id: crypto.randomUUID(),
         leagueId: input.leagueId,
-        tableNumber: i + 10,
+        tableNumber: i + league.firstTableNumber,
       }));
       await ctx.db.insert(leagueTables).values(rows);
       return ctx.db
@@ -502,6 +514,20 @@ export const leagueRouter = router({
         .from(leagueTables)
         .where(eq(leagueTables.leagueId, input.leagueId))
         .orderBy(asc(leagueTables.tableNumber));
+    }),
+
+  initializeTables: protectedProcedure
+    .input(z.object({ leagueId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const league = await assertLeagueHost(ctx, input.leagueId);
+      await ctx.db.delete(leagueTables).where(eq(leagueTables.leagueId, input.leagueId));
+      await ctx.db.insert(leagueTables).values(
+        Array.from({ length: league.numberOfTables }, (_, i) => ({
+          id: crypto.randomUUID(),
+          leagueId: input.leagueId,
+          tableNumber: i + league.firstTableNumber,
+        })),
+      );
     }),
 
   addTable: protectedProcedure

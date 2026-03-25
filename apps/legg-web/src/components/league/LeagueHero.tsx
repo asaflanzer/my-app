@@ -25,7 +25,9 @@ export const LeagueHero = () => {
   const [optOutModal, setOptOutModal] = useState(false);
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
 
-  const raceTo = is9ball ? 7 : 3;
+  const raceTo = is9ball
+    ? (league?.raceTo9ball ?? 7)
+    : (league?.raceTo8ball ?? 3);
 
   const {
     toggleReady,
