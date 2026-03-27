@@ -21,7 +21,7 @@
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
     --border: 212 97% 78%;
-    --input: 240 5.9% 90%;
+    --input: 221 83% 53%; /* blue-600 */
     --ring: 217 91% 60%;
     --radius: 0.5rem;
   }
@@ -44,7 +44,7 @@
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
     --border: 221 68% 35%;
-    --input: 240 3.7% 15.9%;
+    --input: 221 83% 53%; /* blue-600 */
     --ring: 217 91% 60%;
   }
 }
@@ -56,5 +56,31 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer components {
+  /* Secondary button: blue-600 border */
+  button[class~="bg-secondary"],
+  a[class~="bg-secondary"] {
+    border: 1px solid hsl(221 83% 53%);
+  }
+
+  /* Outline button: text-blue-600 */
+  button[class~="bg-background"][class~="hover:bg-accent"],
+  a[class~="bg-background"][class~="hover:bg-accent"] {
+    color: hsl(221 83% 53%);
+  }
+
+  /* Ghost button: no background, text-blue-400 on hover */
+  button[class~="hover:bg-accent"]:not([class~="bg-background"]):hover,
+  a[class~="hover:bg-accent"]:not([class~="bg-background"]):hover {
+    color: hsl(213 94% 68%); /* blue-400 */
+  }
+
+  /* Link button: text-blue-600 */
+  button[class~="underline-offset-4"],
+  a[class~="underline-offset-4"] {
+    color: hsl(221 83% 53%);
   }
 }
