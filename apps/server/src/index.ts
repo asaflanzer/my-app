@@ -23,6 +23,9 @@ const allowedOrigins = [
   ...(process.env["FRONTEND_URL"]
     ? [normalizeOrigin(process.env["FRONTEND_URL"])]
     : []),
+  ...(process.env["FRONTEND_WEB_URL"]
+    ? [normalizeOrigin(process.env["FRONTEND_WEB_URL"])]
+    : []),
 ];
 
 console.log("Allowed CORS origins:", allowedOrigins);

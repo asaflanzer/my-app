@@ -1,6 +1,12 @@
 import { Navigate } from "react-router-dom";
 import { useSession } from "@/lib/auth-client";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { OAuthButton } from "@/components/auth/OAuthButton";
 
@@ -23,7 +29,7 @@ export const LoginPage = () => {
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1 text-center">
-          <CardTitle className="text-3xl font-bold">Welcome back</CardTitle>
+          <CardTitle className="text-3xl font-bold">LEGG</CardTitle>
           <CardDescription>Sign in to your account to continue</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -33,11 +39,17 @@ export const LoginPage = () => {
           <Separator />
           <p className="text-center text-xs text-muted-foreground">
             By continuing, you agree to our{" "}
-            <a href="/terms" className="underline underline-offset-4 hover:text-primary">
+            <a
+              href="/terms"
+              className="underline underline-offset-4 hover:text-primary"
+            >
               Terms of Service
             </a>{" "}
             and{" "}
-            <a href="/privacy" className="underline underline-offset-4 hover:text-primary">
+            <a
+              href="/privacy"
+              className="underline underline-offset-4 hover:text-primary"
+            >
               Privacy Policy
             </a>
             .

@@ -36,13 +36,13 @@ export const auth = betterAuth({
     "http://localhost:5174",
     "http://localhost:5175",
     ...(process.env["FRONTEND_URL"] ? [process.env["FRONTEND_URL"]] : []),
+    ...(process.env["FRONTEND_WEB_URL"] ? [process.env["FRONTEND_WEB_URL"]] : []),
   ],
   advanced: {
-    // Cross-origin setup (Vercel frontend → Railway backend):
-    // cookies must be SameSite=None;Secure so the browser stores them
-    // from cross-origin fetch responses and sends them on the OAuth callback.
-    // Fall back to Lax in local dev (no FRONTEND_URL set, plain HTTP).
-    defaultCookieAttributes: process.env["FRONTEND_URL"]
+    // Use SameSite=None;Secure only when the backend itself is on HTTPS (production).
+    // In local dev BETTER_AUTH_URL is http://localhost so cookies stay Lax,
+    // which works fine for same-site localhost requests.
+    defaultCookieAttributes: process.env["BETTER_AUTH_URL"]?.startsWith("https://")
       ? { sameSite: "none", secure: true }
       : {},
   },

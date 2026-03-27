@@ -1,4 +1,4 @@
-import { format } from "date-fns";
+import { format, parse } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,8 @@ interface IDatePickerProps {
 }
 
 export const DatePicker = ({ label, value, onChange }: IDatePickerProps) => {
-  const selected = value ? new Date(value) : undefined;
+  const dateStr = value?.split("T")[0] ?? "";
+  const selected = dateStr ? parse(dateStr, "yyyy-MM-dd", new Date()) : undefined;
   return (
     <div className="flex flex-col gap-1.5">
       <Label className="text-xs font-normal text-muted-foreground">
@@ -49,7 +50,7 @@ export const DatePicker = ({ label, value, onChange }: IDatePickerProps) => {
           <Calendar
             mode="single"
             selected={selected}
-            onSelect={(d) => onChange(d ? d.toISOString() : null)}
+            onSelect={(d) => onChange(d ? format(d, "yyyy-MM-dd") : null)}
             initialFocus
           />
         </PopoverContent>
