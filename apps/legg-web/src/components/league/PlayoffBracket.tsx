@@ -9,6 +9,9 @@ interface IPlayoffBracketProps {
   myMemberId: string | undefined;
   raceTo: number;
   gameType: string;
+  isAdmin: boolean;
+  leagueId: string;
+  players: Array<{ memberId: string; status: "available" | "ready" | "playing" }>;
 }
 
 // Layout constants — must match the compact card's rendered height.
@@ -140,6 +143,9 @@ export const PlayoffBracket = ({
   myMemberId,
   raceTo,
   gameType,
+  isAdmin,
+  leagueId,
+  players,
 }: IPlayoffBracketProps) => {
   const rounds = useMemo(
     () => groupGamesByRound(bracket.games),
@@ -248,6 +254,11 @@ export const PlayoffBracket = ({
                           myMemberId={myMemberId}
                           raceTo={raceTo}
                           gameType={gameType}
+                          isAdmin={isAdmin}
+                          leagueId={leagueId}
+                          gameIndex={game.game - 1}
+                          player1Status={players.find((p) => p.memberId === game.player1?.memberId)?.status}
+                          player2Status={players.find((p) => p.memberId === game.player2?.memberId)?.status}
                         />
                       </div>
                     ))}

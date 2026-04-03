@@ -8,7 +8,7 @@ import { trpc } from "@/lib/trpc";
 
 export const LeaguePlayoffsPage = () => {
   const { data: session, isPending: sessionPending } = useSession();
-  const { isLoading: leagueLoading, league, myMemberId } = useLeagueContext();
+  const { isLoading: leagueLoading, league, myMemberId, isAdmin, players } = useLeagueContext();
   const { leagueId } = useParams<{ leagueId: string }>();
 
   const { data: playoffData, isLoading: bracketLoading } =
@@ -45,6 +45,9 @@ export const LeaguePlayoffsPage = () => {
           myMemberId={myMemberId}
           raceTo={playoffData.raceTo}
           gameType={playoffData.gameType}
+          isAdmin={isAdmin}
+          leagueId={leagueId ?? ""}
+          players={players.map((p) => ({ memberId: p.id, status: p.status }))}
         />
       ) : (
         <div className="px-4 py-8 text-center text-sm text-muted-foreground">
